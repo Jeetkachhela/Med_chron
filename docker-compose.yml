@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: medical_chrono_db
+    restart: always
+    environment:
+      POSTGRES_USER: chrono_user
+      POSTGRES_PASSWORD: chrono_password
+      POSTGRES_DB: medical_chronology
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
