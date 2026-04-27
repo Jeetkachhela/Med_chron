@@ -13,11 +13,17 @@ data = {
         {'date': '2023-01-01', 'event_type': 'Initial Visit', 'description': 'Patient presented with back pain.', 'source_file': 'test.pdf'},
         {'date': '2023-01-05', 'event_type': 'Imaging', 'description': 'MRI of lumbar spine.', 'source_file': 'test.pdf'}
     ],
-    'diagnostics': [],
-    'treatments': [],
-    'flags': [],
+    'diagnostics': [
+        {'date': '2023-01-05', 'test_name': 'MRI Lumbar Spine', 'findings': 'L4-L5 disc herniation.', 'clinical_significance': 'Explains patient pain.'}
+    ],
+    'treatments': [
+        {'date': '2023-01-10', 'provider': 'Dr. Smith', 'treatment': 'Physical Therapy', 'notes': 'Started 6-week course.'}
+    ],
+    'flags': [
+        {'severity': 'High', 'type': 'Surgical Candidate', 'description': 'Patient may need discectomy if PT fails.', 'source_file': 'test.pdf'},
+        {'severity': 'Medium', 'type': 'Pain Medication', 'description': 'Prescribed Oxycodone 5mg.', 'source_file': 'test.pdf'}
+    ],
     'files': [{'file_name': 'test.pdf', 'file_type': 'application/pdf', 'uploaded_at': '2023-01-01'}],
-    'medical_summary': 'This is a test summary.',
     'past_history': 'No significant past history.'
 }
 

@@ -9,6 +9,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
+import matplotlib.patheffects as path_effects
 from datetime import datetime, date
 from collections import Counter
 from playwright.sync_api import sync_playwright
@@ -83,8 +84,8 @@ def _generate_timeline_chart(events):
 
     ax.set_xticks(range(len(labels)))
     ax.set_xticklabels(labels, fontsize=7, rotation=45, ha='right')
-    ax.set_ylabel('Events', fontsize=8, fontweight='bold', color='#64748B')
-    ax.tick_params(axis='y', labelsize=7, colors='#64748B')
+    ax.set_ylabel('Events', fontsize=8, fontweight='bold', color='#1e293b')
+    ax.tick_params(axis='both', labelsize=7, colors='#1e293b')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_color('#e2e8f0')
@@ -128,11 +129,12 @@ def _generate_calendar_chart(events):
     for t in autotexts:
         t.set_fontsize(7)
         t.set_fontweight('bold')
-        t.set_color('#475569')
+        t.set_color('#ffffff')
+        t.set_path_effects([path_effects.withStroke(linewidth=1.5, foreground='#0f172a')])
 
     # Center text
     ax.text(0, 0, str(sum(sizes)), ha='center', va='center', fontsize=20, fontweight='bold', color='#0f172a')
-    ax.text(0, -0.15, 'Events', ha='center', va='center', fontsize=7, fontweight='bold', color='#94a3b8')
+    ax.text(0, -0.15, 'Events', ha='center', va='center', fontsize=7, fontweight='bold', color='#64748b')
 
     # Legend
     ax.legend(labels, loc='center left', bbox_to_anchor=(1, 0.5), fontsize=7, frameon=False)
@@ -174,8 +176,8 @@ def _generate_flag_severity_chart(flags):
             ax.text(bar.get_width() + 0.3, bar.get_y() + bar.get_height() / 2,
                     str(count), va='center', fontsize=9, fontweight='bold', color='#334155')
 
-    ax.set_xlabel('Count', fontsize=8, fontweight='bold', color='#64748B')
-    ax.tick_params(axis='both', labelsize=8, colors='#64748B')
+    ax.set_xlabel('Count', fontsize=8, fontweight='bold', color='#1e293b')
+    ax.tick_params(axis='both', labelsize=8, colors='#1e293b')
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_color('#e2e8f0')
@@ -196,6 +198,9 @@ HTML_TEMPLATE = """
 <html>
 <head>
     <meta charset="utf-8">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #1e3a8a;
@@ -216,9 +221,9 @@ HTML_TEMPLATE = """
         }
 
         body {
-            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Inter', sans-serif;
             color: var(--slate-900);
-            line-height: 1.5;
+            line-height: 1.6;
             font-size: 10pt;
             margin: 0;
             padding: 0;
@@ -226,23 +231,26 @@ HTML_TEMPLATE = """
 
         /* ── Cover Section ── */
         .cover {
-            padding: 40px;
-            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+            padding: 50px 40px;
+            background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 100%);
             color: white;
             border-radius: 24px;
             margin-bottom: 40px;
+            box-shadow: 0 10px 15px -3px rgba(30, 58, 138, 0.2);
         }
         .cover h1 {
             margin: 0;
-            font-size: 28pt;
+            font-size: 32pt;
             font-weight: 800;
-            letter-spacing: -0.02em;
+            letter-spacing: -0.03em;
+            line-height: 1.2;
         }
         .cover p {
-            margin: 10px 0 0 0;
-            font-size: 11pt;
-            color: #93c5fd;
+            margin: 12px 0 0 0;
+            font-size: 12pt;
+            color: #bfdbfe;
             font-weight: 500;
+            letter-spacing: 0.01em;
         }
 
         /* ── Patient Info ── */
@@ -252,18 +260,19 @@ HTML_TEMPLATE = """
             border-radius: 20px;
             margin-bottom: 30px;
             border: 1px solid var(--slate-200);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 20px;
         }
         .info-item .label {
             font-weight: 700;
-            color: var(--slate-400);
-            font-size: 7pt;
+            color: var(--slate-500);
+            font-size: 7.5pt;
             text-transform: uppercase;
             letter-spacing: 0.1em;
             display: block;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
         }
         .info-item .value {
             font-size: 11pt;
@@ -275,18 +284,19 @@ HTML_TEMPLATE = """
         .kpi-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
+            gap: 16px;
             margin-bottom: 40px;
         }
         .kpi-card {
-            background-color: var(--slate-50);
-            padding: 15px;
+            background-color: white;
+            padding: 18px 12px;
             border-radius: 16px;
-            border: 1px solid var(--slate-100);
+            border: 1px solid var(--slate-200);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
             text-align: center;
         }
         .kpi-value {
-            font-size: 18pt;
+            font-size: 20pt;
             font-weight: 800;
             color: var(--primary);
             margin: 0;
@@ -297,55 +307,62 @@ HTML_TEMPLATE = """
             color: var(--slate-500);
             text-transform: uppercase;
             letter-spacing: 0.05em;
-            margin-top: 2px;
+            margin-top: 4px;
         }
 
         /* ── ToC ── */
         .toc-container {
             background-color: white;
-            padding: 20px;
+            padding: 24px;
             border-radius: 16px;
-            border: 1px solid var(--slate-100);
+            border: 1px solid var(--slate-200);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+            margin-bottom: 20px;
         }
         .toc-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px dashed var(--slate-100);
+            padding: 10px 0;
+            border-bottom: 1px dashed var(--slate-200);
             text-decoration: none;
-            color: var(--slate-600);
+            color: var(--slate-700);
+            transition: color 0.2s ease;
+        }
+        .toc-item:hover, .toc-item:focus {
+            color: var(--primary);
+            font-weight: 700;
         }
         .toc-label { font-weight: 600; }
-        .toc-dots { flex-grow: 1; border-bottom: 1px dotted var(--slate-200); margin: 0 10px; height: 12px; }
+        .toc-dots { flex-grow: 1; border-bottom: 1px dotted var(--slate-300); margin: 0 12px; height: 14px; }
+        .toc-item:last-child { border-bottom: none; }
 
         /* ── Content Sections ── */
         h2 {
-            color: var(--primary);
-            font-size: 16pt;
+            color: var(--slate-900);
+            font-size: 18pt;
             font-weight: 800;
-            margin-top: 30px;
-            margin-bottom: 16px;
-            padding-bottom: 8px;
-            border-bottom: 2px solid var(--slate-100);
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 12px;
+            border-bottom: 2px solid var(--slate-200);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             page-break-after: avoid;
+            page-break-before: always;
         }
         h2::before {
             content: '';
-            width: 4px;
-            height: 20px;
+            width: 5px;
+            height: 24px;
             background-color: var(--primary-light);
-            border-radius: 2px;
+            border-radius: 3px;
             flex-shrink: 0;
         }
         h3 {
             page-break-after: avoid;
         }
-
-
 
         /* ── Tables ── */
         table {
@@ -356,24 +373,27 @@ HTML_TEMPLATE = """
             border-radius: 12px;
             overflow: hidden;
             border: 1px solid var(--slate-200);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
             page-break-inside: auto;
         }
         th {
-            background-color: var(--slate-900);
-            color: white;
+            background-color: var(--slate-50);
+            color: var(--slate-600);
             text-align: left;
-            padding: 10px 14px;
+            padding: 12px 16px;
             font-size: 8pt;
             font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.05em;
+            border-bottom: 1px solid var(--slate-200);
         }
         td {
-            padding: 10px 14px;
+            padding: 12px 16px;
             border-bottom: 1px solid var(--slate-100);
-            font-size: 9pt;
+            font-size: 9.5pt;
             vertical-align: top;
             background-color: white;
+            color: var(--slate-700);
         }
         tr {
             page-break-inside: avoid;
@@ -389,19 +409,21 @@ HTML_TEMPLATE = """
         .badge {
             display: inline-flex;
             align-items: center;
-            padding: 2px 10px;
-            border-radius: 99px;
+            padding: 4px 10px;
+            border-radius: 6px;
             font-size: 7.5pt;
             font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
-        .badge-blue { background-color: #e0f2fe; color: #0369a1; }
-        .badge-red { background-color: #fee2e2; color: #b91c1c; }
-        .badge-amber { background-color: #fef3c7; color: #b45309; }
-        .badge-green { background-color: #dcfce7; color: #15803d; }
+        .badge-blue { background-color: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .badge-red { background-color: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .badge-amber { background-color: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+        .badge-green { background-color: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
 
         /* ── Charts ── */
         .chart-container {
-            margin: 20px 0;
+            margin: 24px 0;
             text-align: center;
             page-break-inside: avoid;
         }
@@ -410,15 +432,15 @@ HTML_TEMPLATE = """
             height: auto;
             border-radius: 12px;
             border: 1px solid var(--slate-200);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
         }
 
-        .page-break { page-break-before: always; }
         .no-data { color: var(--slate-400); font-style: italic; text-align: center; padding: 20px; }
 
         /* ── Footer ── */
         .report-footer {
             margin-top: 40px;
-            padding-top: 15px;
+            padding-top: 20px;
             border-top: 1px solid var(--slate-200);
             text-align: center;
             font-size: 8pt;
@@ -462,7 +484,7 @@ HTML_TEMPLATE = """
 
     <!-- Table of Contents -->
     <div id="toc" class="toc-container">
-        <h3 style="margin-top:0; font-size: 12pt; font-weight: 800;">Report Contents</h3>
+        <h3 style="margin-top:0; font-size: 13pt; font-weight: 800; color: var(--slate-900);">Report Contents</h3>
         {% if flags %}
         <a href="#flags" class="toc-item">
             <span class="toc-label">1. Risk Analysis & Critical Flags</span>
@@ -495,13 +517,8 @@ HTML_TEMPLATE = """
         </a>
     </div>
 
-    <div class="page-break"></div>
-
-
-
     <!-- ══════════ CRITICAL FLAGS ══════════ -->
     {% if flags %}
-    <div class="page-break"></div>
     <h2 id="flags">Risk Analysis & Critical Flags</h2>
     
     {% if flag_severity_chart %}
@@ -533,7 +550,7 @@ HTML_TEMPLATE = """
                 </td>
                 <td><strong>{{ flag.type }}</strong></td>
                 <td>{{ flag.description }}</td>
-                <td style="color: var(--slate-400); font-size: 7pt;">{{ flag.source_file }}</td>
+                <td style="color: var(--slate-400); font-size: 7.5pt;">{{ flag.source_file }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -542,19 +559,18 @@ HTML_TEMPLATE = """
 
     <!-- ══════════ VISUAL INSIGHTS ══════════ -->
     {% if timeline_chart or calendar_chart %}
-    <div class="page-break"></div>
     <h2 id="insights">Visual Data Insights</h2>
     
     {% if timeline_chart %}
     <div class="chart-container">
-        <h4 style="font-size: 10pt; color: var(--slate-500); margin-bottom: 10px;">Treatment Frequency Over Time</h4>
+        <h4 style="font-size: 10pt; color: var(--slate-500); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Treatment Frequency Over Time</h4>
         <img src="data:image/png;base64,{{ timeline_chart }}">
     </div>
     {% endif %}
 
     {% if calendar_chart %}
     <div class="chart-container">
-        <h4 style="font-size: 10pt; color: var(--slate-500); margin-bottom: 10px;">Clinical Event Distribution</h4>
+        <h4 style="font-size: 10pt; color: var(--slate-500); margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.05em;">Clinical Event Distribution</h4>
         <img src="data:image/png;base64,{{ calendar_chart }}">
     </div>
     {% endif %}
@@ -562,7 +578,6 @@ HTML_TEMPLATE = """
 
     <!-- ══════════ DIAGNOSTICS ══════════ -->
     {% if diagnostics %}
-    <div class="page-break"></div>
     <h2 id="diagnostics">Diagnostic Highlights</h2>
     <table>
         <thead>
@@ -588,7 +603,6 @@ HTML_TEMPLATE = """
 
     <!-- ══════════ TREATMENTS ══════════ -->
     {% if treatments %}
-    <div class="page-break"></div>
     <h2 id="treatments">Treatment History</h2>
     <table>
         <thead>
@@ -613,7 +627,6 @@ HTML_TEMPLATE = """
     {% endif %}
 
     <!-- ══════════ FULL CHRONOLOGY ══════════ -->
-    <div class="page-break"></div>
     <h2 id="chronology">Comprehensive Event Chronology</h2>
     <table>
         <thead>
@@ -630,14 +643,13 @@ HTML_TEMPLATE = """
                 <td>{{ event.date or 'TBD' }}</td>
                 <td><span class="badge badge-blue">{{ event.event_type }}</span></td>
                 <td>{{ event.description }}</td>
-                <td style="color: var(--slate-400); font-size: 7pt;">{{ event.source_file }}</td>
+                <td style="color: var(--slate-400); font-size: 7.5pt;">{{ event.source_file }}</td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
 
     <!-- ══════════ SOURCE FILES ══════════ -->
-    <div class="page-break"></div>
     <h2 id="files">Source Files</h2>
     <table>
         <thead>
