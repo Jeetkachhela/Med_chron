@@ -39,9 +39,7 @@ class Case(Base):
     case_reference = Column(String(100), unique=True, index=True)
     primary_complaint = Column(Text)
     injury_cause = Column(Text)
-    medical_summary = Column(Text)
-    past_history = Column(Text)
-    past_treatments_json = Column(Text)  # Structured past treatment data as JSON array
+
     processing_status = Column(String(50), default="pending")  # Fix #40: pending/processing/completed/failed
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 

@@ -65,23 +65,7 @@ Rules:
 Text:
 {text}"""
 
-SUMMARY_PROMPT = """You are a medical consultant. Read the following chronological medical events and briefly summarize the patient's primary problem.
 
-Return ONLY a valid JSON object with this exact structure:
-{{
-  "medical_summary": "A concise 1-2 line description of the patient's primary problem, injury, or main diagnosis. Keep it very brief.",
-  "past_history": "A very brief 1-sentence summary of prior relevant conditions, or 'None noted'.",
-  "past_treatments": []
-}}
-
-IMPORTANT INSTRUCTIONS:
-1. Keep the medical_summary to just 1-2 lines focusing ONLY on the main patient problem.
-2. Keep the past_history extremely brief.
-3. Return an empty array for past_treatments to save processing time, as detailed treatments are handled elsewhere.
-
-Chronological Events:
-{events_text}
-"""
 
 
 # ── Fix #9: Singleton LLM clients ────────────────────────────────
@@ -150,39 +134,4 @@ def extract_entities(text_chunk: str) -> dict:
     logger.warning("No LLM backend available — skipping extraction")
     return {}
 
-def generate_summary(events_text: str) -> dict:
-    prompt = SUMMARY_PROMPT.format(events_text=events_text)
 
-    client = _get_groq_client()
-    if client:
-        try:
-            chat_completion = client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt}
-                ],
-                model="llama-3.3-70b-versatile",
-                temperature=0.2,
-                response_format={"type": "json_object"}
-            )
-            content = chat_completion.choices[0].message.content
-            parsed = json.loads(content)
-            return parsed
-        except Exception as e:
-            logger.error(f"Groq summary failed: {e}")
-
-    ollama = _get_ollama_client()
-    if ollama:
-        try:
-            response = ollama.chat(model=settings.OLLAMA_MODEL, messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt}
-            ])
-            content = response["message"]["content"]
-            content = content.replace("```json", "").replace("```", "").strip()
-            parsed = json.loads(content)
-            return parsed
-        except Exception as e:
-            logger.error(f"Ollama summary failed: {e}")
-
-    return {}

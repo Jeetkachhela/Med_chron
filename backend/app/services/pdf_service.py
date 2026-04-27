@@ -345,23 +345,7 @@ HTML_TEMPLATE = """
             page-break-after: avoid;
         }
 
-        .summary-box {
-            background-color: #f0f7ff;
-            border-left: 4px solid var(--primary-light);
-            padding: 20px;
-            border-radius: 0 16px 16px 0;
-            font-size: 11pt;
-            color: var(--slate-700);
-            margin-bottom: 20px;
-        }
-        .history-box {
-            background-color: #fffbeb;
-            border-left: 4px solid #f59e0b;
-            padding: 20px;
-            border-radius: 0 16px 16px 0;
-            font-size: 10pt;
-            color: var(--slate-700);
-        }
+
 
         /* ── Tables ── */
         table {
@@ -479,90 +463,41 @@ HTML_TEMPLATE = """
     <!-- Table of Contents -->
     <div id="toc" class="toc-container">
         <h3 style="margin-top:0; font-size: 12pt; font-weight: 800;">Report Contents</h3>
-        <a href="#exec-summary" class="toc-item">
-            <span class="toc-label">1. Executive Summary</span>
-            <span class="toc-dots"></span>
-        </a>
-        <a href="#past-history" class="toc-item">
-            <span class="toc-label">2. Past Medical History</span>
-            <span class="toc-dots"></span>
-        </a>
         {% if flags %}
         <a href="#flags" class="toc-item">
-            <span class="toc-label">3. Risk Analysis & Critical Flags</span>
+            <span class="toc-label">1. Risk Analysis & Critical Flags</span>
             <span class="toc-dots"></span>
         </a>
         {% endif %}
         <a href="#insights" class="toc-item">
-            <span class="toc-label">4. Visual Data Insights</span>
+            <span class="toc-label">2. Visual Data Insights</span>
             <span class="toc-dots"></span>
         </a>
         {% if diagnostics %}
         <a href="#diagnostics" class="toc-item">
-            <span class="toc-label">5. Diagnostic Highlights</span>
+            <span class="toc-label">3. Diagnostic Highlights</span>
             <span class="toc-dots"></span>
         </a>
         {% endif %}
         {% if treatments %}
         <a href="#treatments" class="toc-item">
-            <span class="toc-label">6. Treatment History</span>
+            <span class="toc-label">4. Treatment History</span>
             <span class="toc-dots"></span>
         </a>
         {% endif %}
         <a href="#chronology" class="toc-item">
-            <span class="toc-label">7. Full Event Chronology</span>
+            <span class="toc-label">5. Full Event Chronology</span>
             <span class="toc-dots"></span>
         </a>
         <a href="#files" class="toc-item">
-            <span class="toc-label">8. Source Files</span>
+            <span class="toc-label">6. Source Files</span>
             <span class="toc-dots"></span>
         </a>
     </div>
 
     <div class="page-break"></div>
 
-    <!-- ══════════ EXECUTIVE SUMMARY ══════════ -->
-    <h2 id="exec-summary">Executive Summary</h2>
-    {% if medical_summary %}
-        <div class="summary-box">
-            <p>{{ medical_summary }}</p>
-        </div>
-    {% else %}
-        <p class="no-data">No clinical summary available at this time.</p>
-    {% endif %}
 
-    <h2 id="past-history">Past Medical History</h2>
-    {% if past_history %}
-        <div class="history-box">
-            <p>{{ past_history }}</p>
-        </div>
-    {% else %}
-        <p class="no-data">No relevant past medical history found in the provided records.</p>
-    {% endif %}
-
-    {% if past_treatments and past_treatments|length > 0 %}
-    <h3 style="color: var(--slate-700); font-size: 11pt; margin-top: 20px; font-weight: 700;">Prior Visit Treatment Records</h3>
-    <table>
-        <thead>
-            <tr>
-                <th style="background-color: #92400e;" width="12%">Date</th>
-                <th style="background-color: #92400e;" width="22%">Provider</th>
-                <th style="background-color: #92400e;" width="35%">Treatment</th>
-                <th style="background-color: #92400e;" width="31%">Notes</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for pt in past_treatments %}
-            <tr>
-                <td>{{ pt.date or 'TBD' }}</td>
-                <td><span class="badge badge-amber">{{ pt.provider or 'Unknown' }}</span></td>
-                <td><strong>{{ pt.treatment }}</strong></td>
-                <td style="font-style: italic; color: var(--slate-500);">{{ pt.notes or '—' }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% endif %}
 
     <!-- ══════════ CRITICAL FLAGS ══════════ -->
     {% if flags %}
@@ -747,9 +682,7 @@ def generate_chronology_pdf(data: dict, output_path: str):
         data['calendar_chart'] = f_calendar.result()
         data['flag_severity_chart'] = f_flags.result()
     
-    # Ensure past_treatments is available for template
-    if 'past_treatments' not in data:
-        data['past_treatments'] = []
+
     
     # Render HTML
     template = Template(HTML_TEMPLATE)

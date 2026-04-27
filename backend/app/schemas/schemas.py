@@ -122,8 +122,6 @@ class ChronologyResponse(BaseModel):
     treatments: List[Treatment]
     flags: List[Flag]
     files: List[FileSchema]
-    medical_summary: Optional[str] = None
-    past_history: Optional[str] = None
 
 
 # ── Auth Schemas ──

@@ -5,7 +5,7 @@ import logging
 from sqlalchemy import func
 from app.db.database import SessionLocal
 from app.models.models import File, Event, Case, Patient, Diagnostic, Treatment, Flag
-from app.services.llm_service import extract_entities, generate_summary
+from app.services.llm_service import extract_entities
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
@@ -19,8 +19,6 @@ def process_file(file_path: str, case_id: int):
     db = SessionLocal()
     try:
         _do_process(file_path, case_id, db)
-        # Update summary after each file to ensure it's always fresh
-        update_case_summary(case_id, db)
         # Mark as completed if this is the last file being processed
         _update_processing_status(case_id, db)
     except Exception as e:
@@ -46,8 +44,6 @@ def process_files_batch(file_paths: list[str], case_id: int):
     try:
         for file_path in file_paths:
             _do_process(file_path, case_id, db)
-        # Update summary once after ALL files are processed
-        update_case_summary(case_id, db)
         _update_processing_status(case_id, db)
     except Exception as e:
         db.rollback()
@@ -194,45 +190,7 @@ def _do_process(file_path: str, case_id: int, db):
 
     logger.info(f"  ✓ Finished processing {os.path.basename(file_path)} for case {case_id}")
 
-def update_case_summary(case_id: int, db):
-    """
-    Fetches all events for a case and generates a comprehensive summary.
-    """
-    logger.info(f"  Updating clinical summary for case {case_id}...")
-    case = db.query(Case).filter(Case.id == case_id).first()
-    if not case: return
 
-    # Fetch all events, ordered by date
-    events = db.query(Event).filter(Event.case_id == case_id).order_by(Event.date.asc()).all()
-    if not events:
-        logger.warning("  No events found to summarize.")
-        return
-
-    # Condense events for the prompt (Max 150 events to avoid token limits)
-    if len(events) > 150:
-        step = len(events) // 150
-        sampled_events = events[::step][:150]
-    else:
-        sampled_events = events
-
-    events_lines = []
-    for e in sampled_events:
-        date_str = e.date.isoformat() if e.date else "TBD"
-        events_lines.append(f"{date_str}: {e.event_type} - {e.description}")
-    
-    events_text = "\n".join(events_lines)
-    
-    summary_result = generate_summary(events_text)
-    if summary_result:
-        case.medical_summary = summary_result.get("medical_summary", "")
-        case.past_history = summary_result.get("past_history", "")
-        # Save structured past treatments as JSON
-        import json
-        past_treatments = summary_result.get("past_treatments", [])
-        if past_treatments and isinstance(past_treatments, list):
-            case.past_treatments_json = json.dumps(past_treatments)
-        db.commit()
-        logger.info(f"  ✓ Summary updated for case {case_id} (with {len(past_treatments)} past treatments)")
 
 def _save_entities_batch(result: dict, case_id: int, filename: str, seen_keys: set, db):
     count = 0

@@ -7,7 +7,7 @@ import Timeline from '@/components/Timeline';
 import EventCharts from '@/components/EventCharts';
 import MedicalCalendar from '@/components/MedicalCalendar';
 import DashboardStats from '@/components/DashboardStats';
-import MedicalSummary from '@/components/MedicalSummary';
+
 import DiagnosticsTable from '@/components/DiagnosticsTable';
 import TreatmentsTable from '@/components/TreatmentsTable';
 import FlagsPanel from '@/components/FlagsPanel';
@@ -59,8 +59,6 @@ interface Case {
   case_reference: string;
   primary_complaint: string;
   injury_cause: string;
-  medical_summary: string | null;
-  past_history: string | null;
   processing_status: 'pending' | 'processing' | 'completed' | 'failed';
 }
 
@@ -103,13 +101,6 @@ interface SourceFile {
   uploaded_at: string;
 }
 
-interface PastTreatment {
-  date: string | null;
-  provider: string;
-  treatment: string;
-  notes: string;
-}
-
 interface ChronologyData {
   patient: Patient;
   case: Case;
@@ -118,9 +109,6 @@ interface ChronologyData {
   treatments: Treatment[];
   flags: Flag[];
   files: SourceFile[];
-  medical_summary: string | null;
-  past_history: string | null;
-  past_treatments: PastTreatment[];
   processing_status: 'pending' | 'processing' | 'completed' | 'failed';
 }
 
@@ -470,13 +458,6 @@ export default function Dashboard() {
                 <ErrorBoundary>
                   {activeTab === 'overview' && (
                     <motion.div key="overview" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                      <MedicalSummary
-                        medicalSummary={caseData?.medical_summary}
-                        pastHistory={caseData?.past_history}
-                        pastTreatments={caseData?.past_treatments || []}
-                        events={caseData?.events || []}
-                      />
-
                       {filteredEvents.length > 0 && (
                         <div className="space-y-6">
                           <div className="flex items-center justify-between">

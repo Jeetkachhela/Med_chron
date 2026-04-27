@@ -189,9 +189,6 @@ def get_chronology(case_id: int, db: Session = Depends(get_db), current_user: Us
         "treatments": treatments,
         "flags": flags,
         "files": files,
-        "medical_summary": case.medical_summary,
-        "past_history": case.past_history,
-        "past_treatments": json.loads(case.past_treatments_json) if case.past_treatments_json else [],
         "processing_status": case.processing_status,  # Fix #40
     }
 
@@ -238,9 +235,6 @@ def get_pdf(
         "treatments": treatments,
         "flags": flags,
         "files": files,
-        "medical_summary": case.medical_summary,
-        "past_history": case.past_history,
-        "past_treatments": json.loads(case.past_treatments_json) if case.past_treatments_json else [],
     }
     
     # Fix #6, #18: Use unique temp file instead of fixed path
