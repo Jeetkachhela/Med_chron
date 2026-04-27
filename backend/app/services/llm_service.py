@@ -65,30 +65,19 @@ Rules:
 Text:
 {text}"""
 
-SUMMARY_PROMPT = """You are a senior medical legal consultant. Read the following chronological medical events and provide a high-level clinical synthesis.
-
-Your goal is to summarize the patient's injury, the diagnostic path taken, the treatments provided, and their overall clinical progression or status.
+SUMMARY_PROMPT = """You are a medical consultant. Read the following chronological medical events and briefly summarize the patient's primary problem.
 
 Return ONLY a valid JSON object with this exact structure:
 {{
-  "medical_summary": "A professional 2-3 paragraph clinical synthesis. Focus on key injuries, significant diagnostic findings, and the sequence of care.",
-  "past_history": "A concise paragraph summarizing the patient's past treatment history.",
-  "past_treatments": [
-    {{
-      "date": "YYYY-MM-DD or null",
-      "provider": "Name of provider or facility",
-      "treatment": "Treatment or procedure performed",
-      "notes": "Relevant clinical notes or findings from that visit"
-    }}
-  ]
+  "medical_summary": "A concise 1-2 line description of the patient's primary problem, injury, or main diagnosis. Keep it very brief.",
+  "past_history": "A very brief 1-sentence summary of prior relevant conditions, or 'None noted'.",
+  "past_treatments": []
 }}
 
-IMPORTANT INSTRUCTIONS for past_treatments and past_history:
-1. Identify the LATEST (most recent) date in the provided records. This is the "current visit".
-2. EVERY event that occurred BEFORE this latest date MUST be considered "past treatment history".
-3. Extract all conditions and treatments from these prior visits into `past_treatments` and summarize them in `past_history`.
-4. If there is only one date or all events happen on the same date, then there is no past history (return empty past_treatments).
-5. Sort past_treatments by date ascending (earliest first). Do NOT invent information.
+IMPORTANT INSTRUCTIONS:
+1. Keep the medical_summary to just 1-2 lines focusing ONLY on the main patient problem.
+2. Keep the past_history extremely brief.
+3. Return an empty array for past_treatments to save processing time, as detailed treatments are handled elsewhere.
 
 Chronological Events:
 {events_text}
