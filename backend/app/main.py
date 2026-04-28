@@ -19,9 +19,11 @@ app = FastAPI(
 )
 
 # Set all CORS enabled origins
+# We use allow_origins for explicit domains and allow_origin_regex to support Vercel previews
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,3 +44,8 @@ def debug_db(db: Session = Depends(get_db)):
         return {"status": "success", "message": "Database connection verified"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
+
+# Catch-all to ensure CORS headers on 404s for the /api prefix
+@app.api_route("/api/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+async def catch_all_api(path_name: str):
+    return {"detail": f"Endpoint /api/{path_name} not found. Did you mean /api/v1/{path_name}?"}
