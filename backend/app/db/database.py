@@ -9,6 +9,12 @@ db_uri = settings.SQLALCHEMY_DATABASE_URI
 if db_uri.startswith("postgres://"):
     db_uri = db_uri.replace("postgres://", "postgresql://", 1)
 
+# Force psycopg2 for better compatibility on Render
+if "pg8000" in db_uri:
+    db_uri = db_uri.replace("pg8000", "psycopg2")
+elif "postgresql://" in db_uri:
+    db_uri = db_uri.replace("postgresql://", "postgresql+psycopg2://")
+
 engine_args = {
     "pool_pre_ping": True,  # Fix for dropped connections in cloud environments
     "pool_recycle": 3600,
