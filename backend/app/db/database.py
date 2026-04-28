@@ -40,7 +40,25 @@ if "postgresql" in db_uri:
 
 logger.info(f"Database URI scheme: {db_uri.split('@')[0].split('://')[0] if '://' in db_uri else 'unknown'}")
 
-engine = create_engine(db_uri, **engine_args)
+# Create engine with retry logic for transient network issues
+import time
+from sqlalchemy.exc import OperationalError
+
+def create_engine_with_retry(uri, args, max_retries=3, delay=2):
+    for i in range(max_retries):
+        try:
+            temp_engine = create_engine(uri, **args)
+            # Test connection
+            with temp_engine.connect() as conn:
+                return temp_engine
+        except OperationalError as e:
+            if i == max_retries - 1:
+                logger.error(f"Final connection attempt failed: {e}")
+                return create_engine(uri, **args) # Final attempt, let it raise
+            logger.warning(f"Connection attempt {i+1} failed. Retrying in {delay}s... Error: {e}")
+            time.sleep(delay)
+
+engine = create_engine_with_retry(db_uri, engine_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
