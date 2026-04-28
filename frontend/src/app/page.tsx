@@ -11,10 +11,8 @@ import DashboardStats from '@/components/DashboardStats';
 import DiagnosticsTable from '@/components/DiagnosticsTable';
 import TreatmentsTable from '@/components/TreatmentsTable';
 import FlagsPanel from '@/components/FlagsPanel';
-import Login from '@/components/Login';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import ConfirmModal from '@/components/ConfirmModal';
-import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { 
   Download, 
@@ -116,7 +114,6 @@ interface ChronologyData {
 }
 
 export default function Dashboard() {
-  const { user, isLoading, logout } = useAuth();
   const [activeCaseId, setActiveCaseId] = useState<number | null>(null);
   const [caseData, setCaseData] = useState<ChronologyData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -186,10 +183,8 @@ export default function Dashboard() {
   }, [activeCaseId, caseData?.processing_status, fetchChronology, fetchCases]);
 
   useEffect(() => {
-    if (user) {
-      fetchCases();
-    }
-  }, [user, fetchCases]);
+    fetchCases();
+  }, [fetchCases]);
 
   const handleUploadComplete = (caseId: string) => {
     const id = parseInt(caseId);
@@ -298,17 +293,7 @@ export default function Dashboard() {
     );
   }, [caseData?.events, searchQuery]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
-      </div>
-    );
-  }
 
-  if (!user) {
-    return <Login />;
-  }
 
   const tabs = [
     { key: 'overview', label: 'Overview' },
@@ -347,19 +332,6 @@ export default function Dashboard() {
                 Chronology<span className="text-blue-600">AI</span>
               </h1>
               <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Professional Intelligence</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            <div className="h-8 w-[1px] bg-slate-200 mx-2" />
-            <div className="flex items-center gap-3">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-semibold text-slate-900">{user?.full_name || user?.email}</p>
-                <button onClick={logout} className="text-[10px] text-slate-500 hover:text-red-500 transition-colors">Sign Out</button>
-              </div>
-              <div className="h-10 w-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center">
-                <User className="h-5 w-5 text-blue-600" />
-              </div>
             </div>
           </div>
         </div>

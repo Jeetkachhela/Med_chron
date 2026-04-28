@@ -1,5 +1,4 @@
 import logging
-import os
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
 
 from fastapi import FastAPI, Depends
@@ -10,7 +9,7 @@ from app.api.api_v1.api import api_router
 from app.core.config import settings
 from app.db.database import engine, Base
 
-# Database tables are now managed by Alembic.
+# Database tables are managed by Alembic.
 # Run migrations using: alembic upgrade head
 
 app = FastAPI(
@@ -19,7 +18,7 @@ app = FastAPI(
 )
 
 # Set all CORS enabled origins
-# We use allow_origins for explicit domains and allow_origin_regex to support Vercel previews
+# allow_origin_regex supports Vercel preview deployments
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.CORS_ORIGINS,
@@ -44,8 +43,3 @@ def debug_db(db: Session = Depends(get_db)):
         return {"status": "success", "message": "Database connection verified"}
     except Exception as e:
         return {"status": "error", "message": str(e)}
-
-# Catch-all to ensure CORS headers on 404s for the /api prefix
-@app.api_route("/api/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-async def catch_all_api(path_name: str):
-    return {"detail": f"Endpoint /api/{path_name} not found. Did you mean /api/v1/{path_name}?"}

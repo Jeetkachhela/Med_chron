@@ -4,20 +4,6 @@ from datetime import datetime, timezone
 from app.db.database import Base
 
 
-class User(Base):
-    __tablename__ = "users"
-
-    id = Column(Integer, primary_key=True, index=True)
-    email = Column(String(320), unique=True, index=True, nullable=False)
-    hashed_password = Column(String(128), nullable=False)
-    full_name = Column(String(255))
-    is_active = Column(Boolean, default=True)  # Fix #14: Integer → Boolean
-    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))  # Fix #4
-
-    # User owns cases — Fix #3
-    cases = relationship("Case", back_populates="owner")
-
-
 class Patient(Base):
     __tablename__ = "patients"
 
@@ -34,18 +20,16 @@ class Case(Base):
     __tablename__ = "cases"
 
     id = Column(Integer, primary_key=True, index=True)
-    patient_id = Column(Integer, ForeignKey("patients.id", ondelete="CASCADE"), index=True)  # Fix #30
-    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), index=True)  # Fix #3: ownership
+    patient_id = Column(Integer, ForeignKey("patients.id", ondelete="CASCADE"), index=True)
     case_reference = Column(String(100), unique=True, index=True)
     primary_complaint = Column(Text)
     injury_cause = Column(Text)
 
-    processing_status = Column(String(50), default="pending")  # Fix #40: pending/processing/completed/failed
+    processing_status = Column(String(50), default="pending")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     patient = relationship("Patient", back_populates="cases")
-    owner = relationship("User", back_populates="cases")  # Fix #3
-    files = relationship("File", back_populates="case_", cascade="all, delete-orphan")  # Fix #30
+    files = relationship("File", back_populates="case_", cascade="all, delete-orphan")
     events = relationship("Event", back_populates="case_", cascade="all, delete-orphan")
     diagnostics = relationship("Diagnostic", back_populates="case_", cascade="all, delete-orphan")
     treatments = relationship("Treatment", back_populates="case_", cascade="all, delete-orphan")
@@ -56,7 +40,7 @@ class File(Base):
     __tablename__ = "files"
 
     id = Column(Integer, primary_key=True, index=True)
-    case_id = Column(Integer, ForeignKey("cases.id", ondelete="CASCADE"), index=True)  # Fix #29, #30
+    case_id = Column(Integer, ForeignKey("cases.id", ondelete="CASCADE"), index=True)
     file_name = Column(String(512))
     file_type = Column(String(100))
     file_path = Column(String(1024))
@@ -68,11 +52,11 @@ class File(Base):
 class Event(Base):
     __tablename__ = "events"
     __table_args__ = (
-        Index("ix_events_case_date", "case_id", "date"),  # Fix #29: composite index
+        Index("ix_events_case_date", "case_id", "date"),
     )
 
     id = Column(Integer, primary_key=True, index=True)
-    case_id = Column(Integer, ForeignKey("cases.id", ondelete="CASCADE"), index=True)  # Fix #29, #30
+    case_id = Column(Integer, ForeignKey("cases.id", ondelete="CASCADE"), index=True)
     date = Column(Date, index=True)
     event_type = Column(String(100))
     description = Column(Text)
@@ -86,7 +70,7 @@ class Diagnostic(Base):
     __tablename__ = "diagnostics"
 
     id = Column(Integer, primary_key=True, index=True)
-    case_id = Column(Integer, ForeignKey("cases.id", ondelete="CASCADE"), index=True)  # Fix #29, #30
+    case_id = Column(Integer, ForeignKey("cases.id", ondelete="CASCADE"), index=True)
     date = Column(Date)
     test_name = Column(String(500))
     findings = Column(Text)
@@ -100,7 +84,7 @@ class Treatment(Base):
     __tablename__ = "treatments"
 
     id = Column(Integer, primary_key=True, index=True)
-    case_id = Column(Integer, ForeignKey("cases.id", ondelete="CASCADE"), index=True)  # Fix #29, #30
+    case_id = Column(Integer, ForeignKey("cases.id", ondelete="CASCADE"), index=True)
     date = Column(Date)
     provider = Column(String(255))
     treatment = Column(Text)
@@ -114,7 +98,7 @@ class Flag(Base):
     __tablename__ = "flags"
 
     id = Column(Integer, primary_key=True, index=True)
-    case_id = Column(Integer, ForeignKey("cases.id", ondelete="CASCADE"), index=True)  # Fix #29, #30
+    case_id = Column(Integer, ForeignKey("cases.id", ondelete="CASCADE"), index=True)
     type = Column(String(100))
     description = Column(Text)
     severity = Column(String(20))
