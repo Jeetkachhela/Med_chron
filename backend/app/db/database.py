@@ -16,10 +16,12 @@ engine_args = {
 
 if db_uri.startswith("sqlite"):
     engine_args["connect_args"] = {"check_same_thread": False}
-else:
-    # PostgreSQL specific: ensure SSL is handled if needed
-    # (Usually handled by the URI parameters like ?sslmode=require)
-    pass
+# PostgreSQL specific: ensure SSL is handled if needed
+if "postgresql" in db_uri and "sslmode" not in db_uri:
+    if "?" in db_uri:
+        db_uri += "&sslmode=require"
+    else:
+        db_uri += "?sslmode=require"
 
 engine = create_engine(db_uri, **engine_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
