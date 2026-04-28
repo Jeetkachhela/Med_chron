@@ -77,6 +77,7 @@ interface Diagnostic {
   test_name: string;
   findings: string;
   clinical_significance: string;
+  source_file: string;
 }
 
 interface Treatment {
@@ -85,6 +86,7 @@ interface Treatment {
   provider: string;
   treatment: string;
   notes: string;
+  source_file: string;
 }
 
 interface Flag {
