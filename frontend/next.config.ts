@@ -1,7 +1,11 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  output: "standalone",
+  // Images from external sources (if any) can be added here
+  images: {
+    unoptimized: true,
+  },
 };
 
 export default nextConfig;

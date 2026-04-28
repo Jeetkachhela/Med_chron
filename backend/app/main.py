@@ -1,4 +1,5 @@
 import logging
+import os
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
 
 from fastapi import FastAPI
@@ -16,9 +17,13 @@ app = FastAPI(
 )
 
 # Set all CORS enabled origins
+# Read from CORS_ORIGINS env var (comma-separated) for production flexibility
+_cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:3000")
+allowed_origins = [origin.strip() for origin in _cors_origins.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
