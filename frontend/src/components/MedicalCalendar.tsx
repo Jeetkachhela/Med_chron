@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'; // I'll add this utility if needed, but I'll u
 
 interface Event {
   id: number;
-  date: string;
+  date: string | null;
   event_type: string;
 }
 

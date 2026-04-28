@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 
 interface Event {
   id: number;
-  date: string;
+  date: string | null;
   event_type: string;
   description: string;
   source_file: string;
