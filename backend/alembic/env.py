@@ -71,9 +71,22 @@ def run_migrations_online() -> None:
     Uses create_engine directly instead of engine_from_config to avoid
     configparser %-interpolation issues with URL-encoded passwords.
     """
+    import socket
+    from urllib.parse import urlparse
+
     connect_args = {}
     if "postgresql" in _db_uri:
         connect_args["sslmode"] = "require"
+
+        # Force IPv4 resolution — Render cannot reach IPv6 addresses
+        try:
+            parsed = urlparse(_db_uri)
+            hostname = parsed.hostname
+            if hostname and not hostname.replace(".", "").isdigit():
+                ipv4_addr = socket.getaddrinfo(hostname, None, socket.AF_INET)[0][4][0]
+                connect_args["hostaddr"] = ipv4_addr
+        except Exception:
+            pass  # Fall back to default resolution
 
     connectable = create_engine(
         _db_uri,

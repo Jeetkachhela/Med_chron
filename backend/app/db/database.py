@@ -2,6 +2,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
 import logging
+import socket
+import time
+from urllib.parse import urlparse
 
 logger = logging.getLogger(__name__)
 
@@ -30,35 +33,34 @@ engine_args = {
 if db_uri.startswith("sqlite"):
     engine_args["connect_args"] = {"check_same_thread": False}
 
-# PostgreSQL SSL: psycopg2 uses connect_args for sslmode, not query params
+# PostgreSQL SSL & IPv4: psycopg2 uses connect_args for sslmode
 if "postgresql" in db_uri:
     # Strip any sslmode query params — we handle it via connect_args
     for suffix in ["?sslmode=require", "&sslmode=require"]:
         db_uri = db_uri.replace(suffix, "")
-    engine_args.setdefault("connect_args", {})
-    engine_args["connect_args"]["sslmode"] = "require"
+    
+    connect_args = {"sslmode": "require"}
+    
+    # ── Force IPv4 resolution ─────────────────────────────────────
+    # Render's Docker containers often cannot reach IPv6 addresses.
+    # We resolve the DB hostname to an IPv4 address and pass it via
+    # psycopg2's 'hostaddr' parameter to bypass IPv6 DNS resolution.
+    try:
+        parsed = urlparse(db_uri)
+        hostname = parsed.hostname
+        if hostname and not hostname.replace(".", "").isdigit():
+            # Resolve to IPv4 only (AF_INET)
+            ipv4_addr = socket.getaddrinfo(hostname, None, socket.AF_INET)[0][4][0]
+            connect_args["hostaddr"] = ipv4_addr
+            logger.info(f"Resolved {hostname} -> {ipv4_addr} (forced IPv4)")
+    except (socket.gaierror, IndexError, Exception) as e:
+        logger.warning(f"IPv4 resolution failed for DB host, using default: {e}")
+    
+    engine_args["connect_args"] = connect_args
 
 logger.info(f"Database URI scheme: {db_uri.split('@')[0].split('://')[0] if '://' in db_uri else 'unknown'}")
 
-# Create engine with retry logic for transient network issues
-import time
-from sqlalchemy.exc import OperationalError
-
-def create_engine_with_retry(uri, args, max_retries=3, delay=2):
-    for i in range(max_retries):
-        try:
-            temp_engine = create_engine(uri, **args)
-            # Test connection
-            with temp_engine.connect() as conn:
-                return temp_engine
-        except OperationalError as e:
-            if i == max_retries - 1:
-                logger.error(f"Final connection attempt failed: {e}")
-                return create_engine(uri, **args) # Final attempt, let it raise
-            logger.warning(f"Connection attempt {i+1} failed. Retrying in {delay}s... Error: {e}")
-            time.sleep(delay)
-
-engine = create_engine_with_retry(db_uri, engine_args)
+engine = create_engine(db_uri, **engine_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
