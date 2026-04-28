@@ -32,5 +32,6 @@ app.add_middleware(
 app.include_router(api_router, prefix=settings.API_V1_STR)
 
 @app.get("/")
+@app.head("/")
 def root():
     return {"message": "Welcome to the Medical Chronology API"}
