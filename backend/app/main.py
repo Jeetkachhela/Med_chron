@@ -2,8 +2,10 @@ import logging
 import os
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
+from sqlalchemy.orm import Session
 from fastapi.middleware.cors import CORSMiddleware
+from app.db.database import get_db
 from app.api.api_v1.api import api_router
 from app.core.config import settings
 from app.db.database import engine, Base
@@ -35,3 +37,12 @@ app.include_router(api_router, prefix=settings.API_V1_STR)
 @app.head("/")
 def root():
     return {"message": "Welcome to the Medical Chronology API"}
+
+@app.get("/debug-db")
+def debug_db(db: Session = Depends(get_db)):
+    try:
+        from sqlalchemy import text
+        db.execute(text("SELECT 1"))
+        return {"status": "success", "message": "Database connection verified"}
+    except Exception as e:
+        return {"status": "error", "message": str(e)}
