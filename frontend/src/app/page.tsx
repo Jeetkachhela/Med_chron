@@ -92,6 +92,7 @@ interface Flag {
   type: string;
   description: string;
   severity: 'High' | 'Medium' | 'Low';
+  source_file: string;
 }
 
 interface SourceFile {
