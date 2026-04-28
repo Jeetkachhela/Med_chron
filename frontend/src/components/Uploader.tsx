@@ -54,7 +54,7 @@ export default function Uploader({ onUploadComplete }: UploaderProps) {
     setProgress(10);
 
     try {
-      const authToken = localStorage.getItem('auth_token');
+      const authToken = sessionStorage.getItem('auth_token');
       const authHeaders = { Authorization: `Bearer ${authToken}` };
       
       const caseRes = await axios.post(`${API_BASE}/cases/`, {

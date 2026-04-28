@@ -23,6 +23,10 @@ COPY . .
 # Create required directories
 RUN mkdir -p uploads pdf_cache
 
+# Make start script executable
+RUN chmod +x start.sh
+
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Use start.sh which runs migrations then starts uvicorn
+CMD ["./start.sh"]

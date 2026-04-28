@@ -1,6 +1,6 @@
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
+from sqlalchemy import engine_from_config, create_engine
 from sqlalchemy import pool
 
 from alembic import context
@@ -25,15 +25,18 @@ from app.core.config import settings
 
 target_metadata = Base.metadata
 
-# Set sqlalchemy.url from settings dynamically
-# We need to replace % with %% because alembic uses configparser which interprets % as interpolation
-alembic_db_uri = settings.SQLALCHEMY_DATABASE_URI.replace("postgres://", "postgresql://", 1)
-config.set_main_option("sqlalchemy.url", alembic_db_uri.replace("%", "%%"))
+# Build the database URL from settings (same normalization as database.py)
+_db_uri = settings.SQLALCHEMY_DATABASE_URI
+if _db_uri.startswith("postgres://"):
+    _db_uri = _db_uri.replace("postgres://", "postgresql://", 1)
+if "pg8000" in _db_uri:
+    _db_uri = _db_uri.replace("+pg8000", "+psycopg2", 1)
+elif "postgresql://" in _db_uri and "+psycopg2" not in _db_uri:
+    _db_uri = _db_uri.replace("postgresql://", "postgresql+psycopg2://", 1)
 
-# other values from the config, defined by the needs of env.py,
-# can be acquired:
-# my_important_option = config.get_main_option("my_important_option")
-# ... etc.
+# Strip sslmode from URL — we pass it via connect_args
+for suffix in ["?sslmode=require", "&sslmode=require"]:
+    _db_uri = _db_uri.replace(suffix, "")
 
 
 def run_migrations_offline() -> None:
@@ -48,9 +51,8 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
     context.configure(
-        url=url,
+        url=_db_uri,
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
@@ -66,11 +68,17 @@ def run_migrations_online() -> None:
     In this scenario we need to create an Engine
     and associate a connection with the context.
 
+    Uses create_engine directly instead of engine_from_config to avoid
+    configparser %-interpolation issues with URL-encoded passwords.
     """
-    connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    connect_args = {}
+    if "postgresql" in _db_uri:
+        connect_args["sslmode"] = "require"
+
+    connectable = create_engine(
+        _db_uri,
         poolclass=pool.NullPool,
+        connect_args=connect_args,
     )
 
     with connectable.connect() as connection:

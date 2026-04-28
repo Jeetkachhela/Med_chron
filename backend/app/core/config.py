@@ -17,22 +17,15 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = os.getenv("POSTGRES_DB", "medical_chronology")
     SQLALCHEMY_DATABASE_URI: str = ""
 
-    @classmethod
-    def _assemble_db_uri(cls, v: str, values: dict) -> str:
-        """Build PostgreSQL URI from parts if SQLALCHEMY_DATABASE_URI not explicitly set."""
-        if v and v.strip():
-            return v
-        server = values.get("POSTGRES_SERVER", "localhost")
-        user = values.get("POSTGRES_USER", "chrono_user")
-        password = values.get("POSTGRES_PASSWORD", "chrono_password")
-        db = values.get("POSTGRES_DB", "medical_chronology")
-        return f"postgresql+pg8000://{user}:{password}@{server}/{db}"
-
     def model_post_init(self, __context) -> None:
-        """Assemble DB URI after all fields are loaded — fixes #13."""
+        """Assemble DB URI after all fields are loaded.
+        
+        Only builds from components if SQLALCHEMY_DATABASE_URI was NOT 
+        explicitly set via env var or .env file.
+        """
         if not self.SQLALCHEMY_DATABASE_URI or not self.SQLALCHEMY_DATABASE_URI.strip():
             self.SQLALCHEMY_DATABASE_URI = (
-                f"postgresql+pg8000://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
+                f"postgresql+psycopg2://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}"
                 f"@{self.POSTGRES_SERVER}/{self.POSTGRES_DB}"
             )
 
