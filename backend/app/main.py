@@ -30,6 +30,7 @@ app.add_middleware(
 )
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
+app.include_router(api_router, prefix="/api") # Alias to prevent 404/CORS issues if /v1 is omitted
 
 @app.get("/")
 @app.head("/")
