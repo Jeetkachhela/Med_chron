@@ -92,26 +92,31 @@ def _get_ollama_client():
 def extract_entities(text_chunk: str) -> dict:
     prompt = EXTRACTION_PROMPT.format(text=text_chunk)
 
-    # ── Try Groq first (cloud, fast) ────────────────────────────
+    # ── Try Groq first (cloud, fast) with Retries ───────────────────
     client = _get_groq_client()
     if client:
-        try:
-            chat_completion = client.chat.completions.create(
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt}
-                ],
-                model="llama-3.3-70b-versatile",
-                temperature=0.1,
-                response_format={"type": "json_object"}
-            )
-            content = chat_completion.choices[0].message.content
-            parsed = json.loads(content)
-            event_count = len(parsed.get("events", []))
-            logger.info(f"  Groq extracted {event_count} events from chunk")
-            return parsed
-        except Exception as e:
-            logger.error(f"Groq extraction failed: {e}")
+        import time
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                chat_completion = client.chat.completions.create(
+                    messages=[
+                        {"role": "system", "content": SYSTEM_PROMPT},
+                        {"role": "user", "content": prompt}
+                    ],
+                    model="llama-3.3-70b-versatile",
+                    temperature=0.1,
+                    response_format={"type": "json_object"}
+                )
+                content = chat_completion.choices[0].message.content
+                parsed = json.loads(content)
+                event_count = len(parsed.get("events", []))
+                logger.info(f"  Groq extracted {event_count} events from chunk")
+                return parsed
+            except Exception as e:
+                logger.error(f"Groq extraction failed (attempt {attempt+1}/{max_retries}): {e}")
+                if attempt < max_retries - 1:
+                    time.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s, 4s
 
     # ── Fallback to Ollama (local) ──────────────────────────────
     ollama = _get_ollama_client()

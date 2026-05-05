@@ -102,10 +102,15 @@ def create_case(case_in: CaseCreate, db: Session = Depends(get_db), current_user
         injury_cause=case_in.injury_cause,
         processing_status="pending",
     )
-    db.add(case)
-    db.commit()
-    db.refresh(case)
-    return {"case_id": case.id}
+    try:
+        db.add(case)
+        db.commit()
+        db.refresh(case)
+        return {"case_id": case.id}
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error creating case: {e}")
+        raise HTTPException(status_code=500, detail="Database error occurred while creating the case.")
 
 
 # ── Upload Files ─────────────────────────────────────────────────
@@ -156,8 +161,13 @@ async def upload_files(
         saved_files.append(file_location)
         
     # Update processing status — Fix #40
-    case.processing_status = "processing"
-    db.commit()
+    try:
+        case.processing_status = "processing"
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error updating processing status: {e}")
+        raise HTTPException(status_code=500, detail="Database error occurred during file upload.")
     
     # Trigger batch processing in background
     if saved_files:
@@ -339,7 +349,12 @@ def _delete_case_background(case_id: int, user_id: int):
         db.query(Case).filter(Case.id == case_id).delete(synchronize_session=False)
         if patient_id:
             db.query(Patient).filter(Patient.id == patient_id).delete(synchronize_session=False)
-        db.commit()
+        try:
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Failed to commit deletion for case {case_id}: {e}")
+            return
 
         for fp in file_paths:
             try:

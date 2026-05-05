@@ -76,10 +76,15 @@ def register_user(
         hashed_password=security.get_password_hash(user_in.password),
         full_name=user_in.full_name,
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
+    try:
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+    except Exception as e:
+        db.rollback()
+        logger.error(f"Error registering user: {e}")
+        raise HTTPException(status_code=500, detail="Database error occurred during registration.")
 
 
 @router.get("/me", response_model=schemas.UserResponse)
