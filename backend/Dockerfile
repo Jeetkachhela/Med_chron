@@ -26,6 +26,10 @@ RUN mkdir -p uploads pdf_cache
 # Make start script executable
 RUN chmod +x start.sh
 
+# Pre-build Matplotlib font cache to prevent slow startup times on live server
+ENV MPLCONFIGDIR=/tmp/matplotlib
+RUN python -c "import matplotlib.font_manager"
+
 EXPOSE 8000
 
 # Use start.sh which runs migrations then starts uvicorn
