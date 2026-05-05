@@ -54,12 +54,15 @@ export default function Uploader({ onUploadComplete }: UploaderProps) {
     setProgress(10);
 
     try {
+      const authToken = sessionStorage.getItem('auth_token');
+      const authHeaders = { Authorization: `Bearer ${authToken}` };
+      
       const caseRes = await axios.post(`${API_BASE}/cases/`, {
         patient_name: patientName,
         case_reference: caseRef || undefined,
         primary_complaint: "Medical Review",
         injury_cause: "Unknown"
-      });
+      }, { headers: authHeaders });
       
       const caseId = caseRes.data.case_id;
       setProgress(40);
@@ -68,7 +71,7 @@ export default function Uploader({ onUploadComplete }: UploaderProps) {
       files.forEach(file => formData.append('files', file));
       
       await axios.post(`${API_BASE}/cases/${caseId}/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: { 'Content-Type': 'multipart/form-data', ...authHeaders },
         onUploadProgress: (progressEvent) => {
           const p = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 100));
           setProgress(40 + (p * 0.6));
