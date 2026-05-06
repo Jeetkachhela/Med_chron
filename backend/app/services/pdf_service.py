@@ -26,7 +26,10 @@ def _get_browser():
     global _playwright_instance, _browser_instance
     if _browser_instance is None:
         _playwright_instance = sync_playwright().start()
-        _browser_instance = _playwright_instance.chromium.launch(headless=True)
+        _browser_instance = _playwright_instance.chromium.launch(
+            headless=True,
+            args=['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
+        )
         logger.info("Playwright browser singleton started")
     return _browser_instance
 
