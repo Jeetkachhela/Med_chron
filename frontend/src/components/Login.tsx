@@ -24,13 +24,32 @@ export default function Login() {
 
     try {
       if (isRegister) {
+        // Register the user
         await axios.post(`${API_BASE}/auth/register`, {
           email,
           password,
           full_name: fullName
         });
-        setIsRegister(false);
-        setError('Registration successful. Please log in.');
+
+        // Automatically log them in immediately using the credentials they just provided
+        const formData = new URLSearchParams();
+        formData.append('username', email);
+        formData.append('password', password);
+        
+        const res = await axios.post(`${API_BASE}/auth/login`, formData, {
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+        });
+        
+        const token = res.data.access_token;
+        const user = res.data.user;
+        if (user) {
+          login(token, user);
+        } else {
+          const userRes = await axios.get(`${API_BASE}/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          login(token, userRes.data);
+        }
       } else {
         const formData = new URLSearchParams();
         formData.append('username', email);
@@ -41,11 +60,15 @@ export default function Login() {
         });
         
         const token = res.data.access_token;
-        const userRes = await axios.get(`${API_BASE}/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        login(token, userRes.data);
+        const user = res.data.user;
+        if (user) {
+          login(token, user);
+        } else {
+          const userRes = await axios.get(`${API_BASE}/auth/me`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          login(token, userRes.data);
+        }
       }
     } catch (err: unknown) {
       const axiosErr = err as { response?: { data?: { detail?: string } } };

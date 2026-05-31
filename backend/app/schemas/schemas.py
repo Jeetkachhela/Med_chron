@@ -125,9 +125,19 @@ class ChronologyResponse(BaseModel):
 
 
 # ── Auth Schemas ──
+class UserResponse(BaseModel):
+    id: int
+    email: EmailStr
+    full_name: Optional[str] = None
+    is_active: bool  # Fix #14: was int
+
+    class Config:
+        from_attributes = True
+
 class Token(BaseModel):
     access_token: str
     token_type: str
+    user: Optional[UserResponse] = None
 
 class TokenData(BaseModel):
     email: Optional[str] = None
@@ -144,12 +154,3 @@ class UserCreate(BaseModel):
         if len(v) < 8:
             raise ValueError("Password must be at least 8 characters long")
         return v
-
-class UserResponse(BaseModel):
-    id: int
-    email: EmailStr
-    full_name: Optional[str] = None
-    is_active: bool  # Fix #14: was int
-
-    class Config:
-        from_attributes = True

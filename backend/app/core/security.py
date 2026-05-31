@@ -26,7 +26,8 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def get_password_hash(password: str) -> str:
     # Ensure password is not longer than 72 bytes to prevent ValueError
     pw_bytes = password.encode('utf-8')[:72]
-    return bcrypt.hashpw(pw_bytes, bcrypt.gensalt()).decode('utf-8')
+    # Use 10 rounds for standard balance of security and speed (especially in CPU-limited containers)
+    return bcrypt.hashpw(pw_bytes, bcrypt.gensalt(10)).decode('utf-8')
 
 def validate_password_strength(password: str) -> str | None:
     """Returns error message if password is too weak, None if OK. Fix #5."""
