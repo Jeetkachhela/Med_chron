@@ -104,7 +104,7 @@ def extract_entities(text_chunk: str) -> dict:
                         {"role": "system", "content": SYSTEM_PROMPT},
                         {"role": "user", "content": prompt}
                     ],
-                    model="llama-3.3-70b-versatile",
+                    model=settings.GROQ_MODEL,
                     temperature=0.1,
                     response_format={"type": "json_object"}
                 )

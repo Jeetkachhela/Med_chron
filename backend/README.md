@@ -21,5 +21,6 @@
 Create a `.env` file in `backend/`:
 ```
 GROQ_API_KEY=your_key_if_using_groq
+GROQ_MODEL=llama-3.3-70b-specdec
 OLLAMA_MODEL=phi3
 ```
