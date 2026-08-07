@@ -5,8 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Stethoscope, Lock, Mail, User, ArrowRight, ShieldCheck } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+import { API_BASE } from '@/lib/api';
 
 export default function Login() {
   const { login } = useAuth();

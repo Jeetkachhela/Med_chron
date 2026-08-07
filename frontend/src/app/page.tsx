@@ -34,8 +34,7 @@ import {
   Loader2,
   AlertCircle
 } from 'lucide-react';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
+import { API_BASE } from '@/lib/api';
 
 // ── Fix #25: Proper TypeScript Interfaces ──────────────────────
 interface CaseSummary {

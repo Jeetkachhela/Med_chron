@@ -32,6 +32,7 @@ app.add_middleware(
 
 app.include_router(api_router, prefix=settings.API_V1_STR)
 app.include_router(api_router, prefix="/api") # Alias to prevent 404/CORS issues if /v1 is omitted
+app.include_router(api_router, prefix="") # Fallback alias to handle direct /auth or /cases without prefix
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
