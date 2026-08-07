@@ -1,11 +1,11 @@
 import logging
 import os
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
+logger = logging.getLogger(__name__)
 
 from fastapi import FastAPI, Depends, Request
 from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
-from fastapi.middleware.cors import CORSMiddleware
 from app.db.database import get_db
 from app.api.api_v1.api import api_router
 from app.core.config import settings
@@ -19,44 +19,37 @@ app = FastAPI(
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
+# ── Single CORS middleware via manual origin reflection ──────────
+# This replaces both the old CORSMiddleware AND the custom middleware
+# to avoid duplicate Access-Control-Allow-Origin headers.
 @app.middleware("http")
-async def add_cors_headers(request: Request, call_next):
-    origin = request.headers.get("origin") or "*"
+async def cors_middleware(request: Request, call_next):
+    origin = request.headers.get("origin", "")
+
+    # Handle preflight (OPTIONS) immediately
     if request.method == "OPTIONS":
         response = JSONResponse(content={"status": "ok"}, status_code=200)
-        response.headers["Access-Control-Allow-Origin"] = origin
-        response.headers["Access-Control-Allow-Credentials"] = "true"
-        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-        response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept, Origin, User-Agent"
-        return response
+    else:
+        try:
+            response = await call_next(request)
+        except Exception as exc:
+            logger.error(f"Unhandled Exception in middleware: {exc}", exc_info=True)
+            response = JSONResponse(
+                status_code=500,
+                content={"detail": "An unexpected server error occurred."}
+            )
 
-    try:
-        response = await call_next(request)
-    except Exception as exc:
-        logger.error(f"Unhandled Exception in middleware: {exc}", exc_info=True)
-        response = JSONResponse(
-            status_code=500,
-            content={"detail": "An unexpected server error occurred."}
-        )
-
-    response.headers["Access-Control-Allow-Origin"] = origin
+    # Reflect the requesting origin (or * for non-browser clients)
+    response.headers["Access-Control-Allow-Origin"] = origin if origin else "*"
     response.headers["Access-Control-Allow-Credentials"] = "true"
-    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
-    response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept, Origin, User-Agent"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH, HEAD"
+    response.headers["Access-Control-Allow-Headers"] = "Authorization, Content-Type, Accept, Origin, User-Agent, X-Requested-With"
+    response.headers["Access-Control-Max-Age"] = "86400"
     return response
 
-# Set all CORS enabled origins
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 app.include_router(api_router, prefix=settings.API_V1_STR)
-app.include_router(api_router, prefix="/api") # Alias to prevent 404/CORS issues if /v1 is omitted
-app.include_router(api_router, prefix="") # Fallback alias to handle direct /auth or /cases without prefix
+app.include_router(api_router, prefix="/api")
+app.include_router(api_router, prefix="")
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):

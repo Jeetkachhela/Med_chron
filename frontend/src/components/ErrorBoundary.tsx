@@ -42,12 +42,12 @@ export default class ErrorBoundary extends Component<Props, State> {
       }
 
       return (
-        <div className="flex flex-col items-center justify-center min-h-[400px] rounded-3xl border border-red-100 bg-red-50/50 p-12 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100 text-red-500 mb-6">
+        <div className="flex flex-col items-center justify-center min-h-[400px] rounded-3xl border border-[var(--danger-border)] bg-[var(--danger-light)]/50 p-12 text-center">
+          <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-red-100 text-[var(--danger)] mb-6">
             <AlertTriangle className="h-8 w-8" />
           </div>
-          <h3 className="text-xl font-bold text-slate-900 mb-2">Something went wrong</h3>
-          <p className="text-sm text-slate-500 mb-6 max-w-md">
+          <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">Something went wrong</h3>
+          <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-md">
             An unexpected error occurred while rendering this section. Please try refreshing.
           </p>
           {this.state.error && (

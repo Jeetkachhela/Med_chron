@@ -14,17 +14,17 @@ interface Flag {
 }
 
 const SEVERITY_CONFIG: Record<string, { color: string; bg: string; text: string; ring: string; chartColor: string }> = {
-  High: { color: 'bg-red-500', bg: 'bg-red-50', text: 'text-red-700', ring: 'ring-red-100', chartColor: '#EF4444' },
-  Medium: { color: 'bg-amber-500', bg: 'bg-amber-50', text: 'text-amber-700', ring: 'ring-amber-100', chartColor: '#F59E0B' },
-  Low: { color: 'bg-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-700', ring: 'ring-emerald-100', chartColor: '#10B981' },
+  High: { color: 'bg-red-500', bg: 'bg-[var(--danger-light)]', text: 'text-[var(--danger)]', ring: 'ring-[var(--danger-border)]', chartColor: '#EF4444' },
+  Medium: { color: 'bg-amber-500', bg: 'bg-[var(--warning-light)]', text: 'text-[var(--warning)]', ring: 'ring-[var(--warning-border)]', chartColor: '#F59E0B' },
+  Low: { color: 'bg-emerald-500', bg: 'bg-[var(--success-light)]', text: 'text-[var(--success)]', ring: 'ring-[var(--success-border)]', chartColor: '#10B981' },
 };
 
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload?.length) {
     return (
-      <div className="rounded-xl border border-slate-100 bg-white p-3 shadow-xl text-xs">
-        <p className="font-bold text-slate-900">{payload[0].name} Severity</p>
-        <p className="text-slate-600 font-semibold">{payload[0].value} flags</p>
+      <div className="rounded-xl border border-[var(--border)] bg-[var(--surface)] p-3 shadow-xl text-xs">
+        <p className="font-bold text-[var(--text-primary)]">{payload[0].name} Severity</p>
+        <p className="text-[var(--text-secondary)] font-semibold">{payload[0].value} flags</p>
       </div>
     );
   }
@@ -49,20 +49,20 @@ export default function FlagsPanel({ flags }: { flags: Flag[] }) {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-3xl border border-slate-100 bg-white shadow-sm overflow-hidden"
+      className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] shadow-[var(--shadow-sm)] overflow-hidden"
     >
-      <div className="px-8 py-6 border-b border-slate-100">
-        <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+      <div className="px-8 py-6 border-b border-[var(--border)]">
+        <h3 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
           <ShieldAlert className="w-5 h-5 text-red-500" /> Risk & Flags Analysis
         </h3>
-        <p className="text-xs text-slate-400 mt-1">{flags.length} clinical flags identified</p>
+        <p className="text-xs text-[var(--text-muted)] mt-1">{flags.length} clinical flags identified</p>
       </div>
 
       <div className="p-8">
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8">
           {/* Severity Donut */}
           <div className="lg:col-span-2 flex flex-col items-center">
-            <h4 className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Severity Distribution</h4>
+            <h4 className="text-xs font-bold uppercase tracking-widest text-[var(--text-muted)] mb-4">Severity Distribution</h4>
             <div className="relative">
               <ResponsiveContainer width={200} height={200}>
                 <PieChart>
@@ -84,8 +84,8 @@ export default function FlagsPanel({ flags }: { flags: Flag[] }) {
                 </PieChart>
               </ResponsiveContainer>
               <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-2xl font-extrabold text-slate-900">{flags.length}</span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Flags</span>
+                <span className="text-2xl font-extrabold text-[var(--text-primary)]">{flags.length}</span>
+                <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Flags</span>
               </div>
             </div>
             <div className="flex items-center gap-4 mt-4">
@@ -94,7 +94,7 @@ export default function FlagsPanel({ flags }: { flags: Flag[] }) {
                 return (
                   <div key={entry.name} className="flex items-center gap-1.5">
                     <div className={`w-2.5 h-2.5 rounded-full ${config.color}`} />
-                    <span className="text-[10px] font-bold text-slate-500">{entry.name} ({entry.value})</span>
+                    <span className="text-[10px] font-bold text-[var(--text-secondary)]">{entry.name} ({entry.value})</span>
                   </div>
                 );
               })}

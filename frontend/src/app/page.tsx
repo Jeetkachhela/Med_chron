@@ -117,6 +117,7 @@ interface ChronologyData {
 
 export default function Dashboard() {
   const { user, isLoading, logout } = useAuth();
+  // Session control: default to workspace for authenticated users
   const [currentView, setCurrentView] = useState<'landing' | 'auth' | 'workspace'>('landing');
   const [authRegisterMode, setAuthRegisterMode] = useState(false);
   const [activeCaseId, setActiveCaseId] = useState<number | null>(null);
@@ -129,9 +130,27 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState<'overview' | 'timeline' | 'diagnostics' | 'treatments'>('overview');
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
   const [caseToDelete, setCaseToDelete] = useState<number | null>(null);
+  // Track if user explicitly navigated to landing (vs auto-redirect)
+  const explicitLandingRef = useRef(false);
   
   // Ref for polling interval cleanup
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
+
+  // ── Session Control: Auto-redirect based on auth state ───────
+  useEffect(() => {
+    if (isLoading) return; // Wait for auth to resolve
+    
+    if (user) {
+      // Authenticated: go to workspace unless user explicitly clicked "Product Overview"
+      if (!explicitLandingRef.current) {
+        setCurrentView('workspace');
+      }
+    } else {
+      // Not authenticated: go to landing
+      setCurrentView('landing');
+      explicitLandingRef.current = false;
+    }
+  }, [user, isLoading]);
 
   const showToast = (message: string, type: 'success' | 'error' = 'success') => {
     setToast({ message, type });
@@ -300,14 +319,16 @@ export default function Dashboard() {
     );
   }, [caseData?.events, searchQuery]);
 
+  // ── Loading State ─────────────────────────────────────────────
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <div className="w-12 h-12 border-4 border-[var(--accent-light)] border-t-[var(--accent)] rounded-full animate-spin"></div>
       </div>
     );
   }
 
+  // ── Unauthenticated: Landing or Auth ──────────────────────────
   if (!user) {
     if (currentView === 'auth') {
       return (
@@ -328,17 +349,19 @@ export default function Dashboard() {
     );
   }
 
+  // ── Authenticated but viewing landing ─────────────────────────
   if (currentView === 'landing') {
     return (
       <HeroLanding
-        onGetStarted={() => setCurrentView('workspace')}
-        onSignIn={() => setCurrentView('workspace')}
+        onGetStarted={() => { explicitLandingRef.current = false; setCurrentView('workspace'); }}
+        onSignIn={() => { explicitLandingRef.current = false; setCurrentView('workspace'); }}
         isAuthenticated={true}
-        onGoToWorkspace={() => setCurrentView('workspace')}
+        onGoToWorkspace={() => { explicitLandingRef.current = false; setCurrentView('workspace'); }}
       />
     );
   }
 
+  // ── Workspace ─────────────────────────────────────────────────
   const tabs = [
     { key: 'overview', label: 'Overview' },
     { key: 'timeline', label: 'Timeline' },
@@ -347,7 +370,7 @@ export default function Dashboard() {
   ] as const;
 
   return (
-    <div className="min-h-screen bg-[#F8FAFC]">
+    <div className="min-h-screen" style={{ background: 'var(--bg)' }}>
       {/* Toast Notification */}
       <AnimatePresence>
         {toast && (
@@ -365,35 +388,35 @@ export default function Dashboard() {
         )}
       </AnimatePresence>
 
-      <header className="sticky top-0 z-30 w-full border-b border-slate-200 bg-white/80 backdrop-blur-md">
+      <header className="sticky top-0 z-30 w-full border-b border-[var(--border)] bg-[var(--glass-bg)] backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <div className="flex items-center gap-2.5 cursor-pointer" onClick={handleBack}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white shadow-lg shadow-blue-200">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--accent)] text-white shadow-[var(--shadow-accent)]">
               <Stethoscope className="h-6 w-6" />
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight text-slate-900">
-                Chronology<span className="text-blue-600">AI</span>
+              <h1 className="text-xl font-bold tracking-tight text-[var(--text-primary)]">
+                Chronology<span className="text-[var(--accent)]">AI</span>
               </h1>
-              <p className="text-[10px] font-medium uppercase tracking-wider text-slate-500">Professional Intelligence</p>
+              <p className="text-[10px] font-medium uppercase tracking-wider text-[var(--text-muted)]">Professional Intelligence</p>
             </div>
           </div>
           
           <div className="flex items-center gap-4">
             <button
-              onClick={() => setCurrentView('landing')}
-              className="text-xs font-bold text-slate-600 hover:text-blue-600 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 transition-all"
+              onClick={() => { explicitLandingRef.current = true; setCurrentView('landing'); }}
+              className="text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--accent)] px-3 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--surface)] transition-all"
             >
               Product Overview
             </button>
-            <div className="h-8 w-[1px] bg-slate-200 mx-1" />
+            <div className="h-8 w-[1px] bg-[var(--border)] mx-1" />
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-semibold text-slate-900">{user?.full_name || user?.email}</p>
-                <button onClick={logout} className="text-[10px] text-slate-500 hover:text-red-500 transition-colors">Sign Out</button>
+                <p className="text-xs font-semibold text-[var(--text-primary)]">{user?.full_name || user?.email}</p>
+                <button onClick={logout} className="text-[10px] text-[var(--text-muted)] hover:text-[var(--danger)] transition-colors">Sign Out</button>
               </div>
-              <div className="h-10 w-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center">
-                <User className="h-5 w-5 text-blue-600" />
+              <div className="h-10 w-10 rounded-full bg-[var(--accent-lighter)] border border-[var(--accent-light)] flex items-center justify-center">
+                <User className="h-5 w-5 text-[var(--accent)]" />
               </div>
             </div>
           </div>
@@ -413,48 +436,48 @@ export default function Dashboard() {
               {/* Title bar */}
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-4">
-                  <button onClick={handleBack} className="flex items-center justify-center h-10 w-10 rounded-xl bg-white border border-slate-200 shadow-sm hover:bg-slate-50 transition-all">
-                    <ArrowLeft className="w-5 h-5 text-slate-600" />
+                  <button onClick={handleBack} className="flex items-center justify-center h-10 w-10 rounded-xl bg-[var(--surface)] border border-[var(--border)] shadow-[var(--shadow-sm)] hover:bg-[var(--surface-hover)] transition-all">
+                    <ArrowLeft className="w-5 h-5 text-[var(--text-secondary)]" />
                   </button>
                   <div>
                     <div className="flex items-center gap-3">
-                      <h2 className="text-2xl font-extrabold text-slate-900">{caseData?.patient?.name || 'Loading...'}</h2>
+                      <h2 className="text-2xl font-extrabold text-[var(--text-primary)]">{caseData?.patient?.name || 'Loading...'}</h2>
                       {caseData?.processing_status === 'processing' && (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-600 text-[10px] font-bold uppercase tracking-wider animate-pulse">
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[var(--accent-lighter)] text-[var(--accent)] text-[10px] font-bold uppercase tracking-wider animate-pulse">
                           <Loader2 className="w-3 h-3 animate-spin" /> Processing
                         </span>
                       )}
                     </div>
-                    <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest mt-0.5">
-                      Reference: <span className="ml-1 font-mono text-slate-600">{caseData?.case?.case_reference || '...'}</span>
+                    <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-widest mt-0.5">
+                      Reference: <span className="ml-1 font-mono text-[var(--text-secondary)]">{caseData?.case?.case_reference || '...'}</span>
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <div className="relative group">
                     <button
-                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-white border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 shadow-sm hover:bg-slate-50 transition-all active:scale-95"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--surface)] border border-[var(--border)] px-4 py-3 text-sm font-semibold text-[var(--text-secondary)] shadow-[var(--shadow-sm)] hover:bg-[var(--surface-hover)] transition-all active:scale-95"
                     >
                       <FileDown className="h-4 w-4" />
                       Export
                     </button>
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-2xl shadow-xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-40 p-2">
-                      <button onClick={() => handleExportCsv('events')} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">Export Events (CSV)</button>
-                      <button onClick={() => handleExportCsv('diagnostics')} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">Export Diagnostics (CSV)</button>
-                      <button onClick={() => handleExportCsv('treatments')} className="w-full text-left px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-50 rounded-xl transition-colors">Export Treatments (CSV)</button>
+                    <div className="absolute right-0 top-full mt-2 w-48 bg-[var(--surface-elevated)] rounded-2xl shadow-[var(--shadow-lg)] border border-[var(--border)] opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-40 p-2">
+                      <button onClick={() => handleExportCsv('events')} className="w-full text-left px-4 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] rounded-xl transition-colors">Export Events (CSV)</button>
+                      <button onClick={() => handleExportCsv('diagnostics')} className="w-full text-left px-4 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] rounded-xl transition-colors">Export Diagnostics (CSV)</button>
+                      <button onClick={() => handleExportCsv('treatments')} className="w-full text-left px-4 py-2 text-xs font-bold text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] rounded-xl transition-colors">Export Treatments (CSV)</button>
                     </div>
                   </div>
                   <button
                     onClick={handleDownloadPdf}
                     disabled={isDownloading || !caseData?.events?.length}
-                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-xl shadow-slate-200 hover:bg-slate-800 focus:outline-none disabled:opacity-50 transition-all active:scale-95"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-[var(--text-primary)] px-6 py-3 text-sm font-semibold text-[var(--text-inverse)] shadow-[var(--shadow-lg)] hover:opacity-90 focus:outline-none disabled:opacity-50 transition-all active:scale-95"
                   >
                     {isDownloading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="h-4 w-4" />}
                     Download Report
                   </button>
                   <button
                     onClick={(e) => handleDeleteCase(e, activeCaseId)}
-                    className="p-3 rounded-xl border border-red-100 bg-red-50 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-sm shadow-red-50"
+                    className="p-3 rounded-xl border border-[var(--danger-border)] bg-[var(--danger-light)] text-[var(--danger)] hover:bg-[var(--danger)] hover:text-white transition-all shadow-[var(--shadow-sm)]"
                     title="Delete Case"
                   >
                     <Trash2 className="w-5 h-5" />
@@ -475,15 +498,15 @@ export default function Dashboard() {
               </ErrorBoundary>
 
               {/* Tab Navigation */}
-              <div className="flex items-center gap-1 bg-white rounded-2xl border border-slate-100 p-1.5 shadow-sm w-fit">
+              <div className="flex items-center gap-1 bg-[var(--surface)] rounded-2xl border border-[var(--border-light)] p-1.5 shadow-[var(--shadow-sm)] w-fit">
                 {tabs.map(tab => (
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
                     className={`px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${
                       activeTab === tab.key
-                        ? 'bg-slate-900 text-white shadow-lg'
-                        : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'
+                        ? 'bg-[var(--text-primary)] text-[var(--text-inverse)] shadow-lg'
+                        : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--surface-hover)]'
                     }`}
                   >
                     {tab.label}
@@ -499,18 +522,18 @@ export default function Dashboard() {
                       {filteredEvents.length > 0 && (
                         <div className="space-y-6">
                           <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold flex items-center text-slate-900">
-                              <BarChart2 className="w-5 h-5 mr-2 text-blue-500" /> Analytics
+                            <h3 className="text-xl font-bold flex items-center text-[var(--text-primary)]">
+                              <BarChart2 className="w-5 h-5 mr-2 text-[var(--accent)]" /> Analytics
                             </h3>
                             <div className="relative w-64">
                               <input 
                                 type="text" 
                                 placeholder="Search events..." 
-                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs shadow-sm"
+                                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-[var(--accent)] outline-none text-xs shadow-[var(--shadow-sm)]"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                               />
-                              <Activity className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                              <Activity className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
                             </div>
                           </div>
                           <EventCharts events={filteredEvents} />
@@ -521,28 +544,28 @@ export default function Dashboard() {
                         <div className="lg:col-span-2">
                           <FlagsPanel flags={caseData?.flags || []} />
                         </div>
-                        <div className="rounded-3xl border border-slate-100 bg-white p-6 shadow-sm">
-                          <h3 className="text-lg font-bold mb-5 text-slate-900 flex items-center">
-                            <CalIcon className="w-4 h-4 mr-2 text-blue-500" /> Treatment Calendar
+                        <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-[var(--shadow-sm)]">
+                          <h3 className="text-lg font-bold mb-5 text-[var(--text-primary)] flex items-center">
+                            <CalIcon className="w-4 h-4 mr-2 text-[var(--accent)]" /> Treatment Calendar
                           </h3>
                           <MedicalCalendar events={caseData?.events || []} />
                         </div>
                       </div>
 
                       {caseData?.files && caseData.files.length > 0 && (
-                        <div className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
-                          <h3 className="text-lg font-bold mb-6 text-slate-900 flex items-center gap-2">
-                            <FolderOpen className="w-5 h-5 text-slate-500" /> Source Files
+                        <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-[var(--shadow-sm)]">
+                          <h3 className="text-lg font-bold mb-6 text-[var(--text-primary)] flex items-center gap-2">
+                            <FolderOpen className="w-5 h-5 text-[var(--text-secondary)]" /> Source Files
                           </h3>
                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             {caseData.files.map((file) => (
-                              <div key={file.id} className="flex items-center p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-colors">
-                                <div className="h-10 w-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center mr-4 flex-shrink-0">
-                                  <FileText className="h-5 w-5 text-slate-400" />
+                              <div key={file.id} className="flex items-center p-4 rounded-2xl bg-[var(--bg-secondary)] border border-[var(--border)] hover:border-[var(--accent-light)] transition-colors">
+                                <div className="h-10 w-10 rounded-xl bg-[var(--surface)] border border-[var(--border)] flex items-center justify-center mr-4 flex-shrink-0">
+                                  <FileText className="h-5 w-5 text-[var(--text-muted)]" />
                                 </div>
                                 <div className="min-w-0">
-                                  <p className="text-sm font-semibold text-slate-900 truncate">{file.file_name}</p>
-                                  <p className="text-[10px] text-slate-500 uppercase font-medium">{new Date(file.uploaded_at).toLocaleDateString()}</p>
+                                  <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{file.file_name}</p>
+                                  <p className="text-[10px] text-[var(--text-secondary)] uppercase font-medium">{new Date(file.uploaded_at).toLocaleDateString()}</p>
                                 </div>
                               </div>
                             ))}
@@ -554,25 +577,25 @@ export default function Dashboard() {
 
                   {activeTab === 'timeline' && (
                     <motion.div key="timeline" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                      <div className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
+                      <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-[var(--shadow-sm)]">
                         <div className="flex items-center justify-between mb-8">
-                          <h3 className="text-xl font-bold flex items-center text-slate-900">
-                            <CalIcon className="w-5 h-5 mr-3 text-blue-500" /> Complete Treatment Timeline
+                          <h3 className="text-xl font-bold flex items-center text-[var(--text-primary)]">
+                            <CalIcon className="w-5 h-5 mr-3 text-[var(--accent)]" /> Complete Treatment Timeline
                           </h3>
                           <div className="relative w-64">
                             <input 
                               type="text" 
                               placeholder="Search timeline..." 
-                              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white focus:ring-2 focus:ring-blue-500 outline-none text-xs shadow-sm"
+                              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[var(--input-border)] bg-[var(--input-bg)] text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:ring-2 focus:ring-[var(--accent)] outline-none text-xs shadow-[var(--shadow-sm)]"
                               value={searchQuery}
                               onChange={(e) => setSearchQuery(e.target.value)}
                             />
-                            <Activity className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                            <Activity className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
                           </div>
                         </div>
                         {loading && !filteredEvents.length ? (
-                          <div className="h-64 flex flex-col items-center justify-center text-slate-400 space-y-4">
-                            <Loader2 className="w-12 h-12 text-blue-500 animate-spin" />
+                          <div className="h-64 flex flex-col items-center justify-center text-[var(--text-muted)] space-y-4">
+                            <Loader2 className="w-12 h-12 text-[var(--accent)] animate-spin" />
                             <p className="font-medium">Synthesizing clinical data...</p>
                           </div>
                         ) : (
@@ -588,9 +611,9 @@ export default function Dashboard() {
                     <motion.div key="diagnostics" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                       <DiagnosticsTable diagnostics={caseData?.diagnostics || []} />
                       {(!caseData?.diagnostics || caseData.diagnostics.length === 0) && (
-                        <div className="rounded-3xl border border-slate-100 bg-white p-16 text-center shadow-sm">
-                          <Activity className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                          <p className="text-slate-400 font-medium">No diagnostic records found for this case.</p>
+                        <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-16 text-center shadow-[var(--shadow-sm)]">
+                          <Activity className="w-12 h-12 text-[var(--border)] mx-auto mb-4" />
+                          <p className="text-[var(--text-muted)] font-medium">No diagnostic records found for this case.</p>
                         </div>
                       )}
                     </motion.div>
@@ -600,9 +623,9 @@ export default function Dashboard() {
                     <motion.div key="treatments" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                       <TreatmentsTable treatments={caseData?.treatments || []} />
                       {(!caseData?.treatments || caseData.treatments.length === 0) && (
-                        <div className="rounded-3xl border border-slate-100 bg-white p-16 text-center shadow-sm">
-                          <Stethoscope className="w-12 h-12 text-slate-200 mx-auto mb-4" />
-                          <p className="text-slate-400 font-medium">No treatment records found for this case.</p>
+                        <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-16 text-center shadow-[var(--shadow-sm)]">
+                          <Stethoscope className="w-12 h-12 text-[var(--border)] mx-auto mb-4" />
+                          <p className="text-[var(--text-muted)] font-medium">No treatment records found for this case.</p>
                         </div>
                       )}
                     </motion.div>
@@ -620,12 +643,12 @@ export default function Dashboard() {
               <div className="mx-auto max-w-2xl">
                 <button 
                   onClick={handleBack} 
-                  className="mb-8 flex items-center text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+                  className="mb-8 flex items-center text-sm font-semibold text-[var(--text-secondary)] hover:text-[var(--text-primary)] transition-colors"
                 >
                   <ArrowLeft className="w-4 h-4 mr-2" /> Back to Intelligence Dashboard
                 </button>
-                <div className="rounded-[2.5rem] bg-white p-2 shadow-2xl shadow-slate-200 ring-1 ring-slate-100">
-                  <div className="rounded-[2rem] border-2 border-dashed border-slate-200 bg-slate-50/50 p-8">
+                <div className="rounded-[2.5rem] bg-[var(--surface)] p-2 shadow-[var(--shadow-lg)] ring-1 ring-[var(--border)]">
+                  <div className="rounded-[2rem] border-2 border-dashed border-[var(--border)] bg-[var(--bg)] p-8">
                     <Uploader onUploadComplete={handleUploadComplete} />
                   </div>
                 </div>
@@ -641,12 +664,12 @@ export default function Dashboard() {
             >
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-4xl font-extrabold tracking-tight text-slate-900">Case Intelligence</h2>
-                  <p className="mt-1 text-lg text-slate-500">Manage and analyze your medical chronology records.</p>
+                  <h2 className="text-4xl font-extrabold tracking-tight text-[var(--text-primary)]">Case Intelligence</h2>
+                  <p className="mt-1 text-lg text-[var(--text-secondary)]">Manage and analyze your medical chronology records.</p>
                 </div>
                 <button
                   onClick={() => setShowUploader(true)}
-                  className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-blue-600 px-8 py-4 text-sm font-bold text-white shadow-xl shadow-blue-200 transition-all hover:bg-blue-700 hover:shadow-blue-300 active:scale-95"
+                  className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-2xl bg-[var(--accent)] px-8 py-4 text-sm font-bold text-white shadow-[var(--shadow-accent)] transition-all hover:bg-[var(--accent-hover)] active:scale-95"
                 >
                   <Plus className="h-5 w-5 transition-transform group-hover:rotate-90" />
                   Create New Analysis
@@ -654,15 +677,15 @@ export default function Dashboard() {
               </div>
 
               {existingCases.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-[3rem] border border-slate-100 bg-white p-20 text-center shadow-sm">
-                  <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-slate-50 text-slate-200">
+                <div className="flex flex-col items-center justify-center rounded-[3rem] border border-[var(--border)] bg-[var(--surface)] p-20 text-center shadow-[var(--shadow-sm)]">
+                  <div className="mb-6 flex h-24 w-24 items-center justify-center rounded-3xl bg-[var(--bg-secondary)] text-[var(--border)]">
                     <FolderOpen className="h-12 w-12" />
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-900">No records found</h3>
-                  <p className="mx-auto mt-2 max-w-sm text-slate-500">Start by uploading medical records. Our AI will automatically extract and structure the timeline for you.</p>
+                  <h3 className="text-2xl font-bold text-[var(--text-primary)]">No records found</h3>
+                  <p className="mx-auto mt-2 max-w-sm text-[var(--text-secondary)]">Start by uploading medical records. Our AI will automatically extract and structure the timeline for you.</p>
                   <button
                     onClick={() => setShowUploader(true)}
-                    className="mt-8 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-bold text-slate-900 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md"
+                    className="mt-8 rounded-xl border border-[var(--border)] bg-[var(--surface)] px-6 py-3 text-sm font-bold text-[var(--text-primary)] shadow-[var(--shadow-sm)] transition-all hover:bg-[var(--surface-hover)] hover:shadow-[var(--shadow-md)]"
                   >
                     Get Started Now
                   </button>
@@ -676,21 +699,21 @@ export default function Dashboard() {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: i * 0.05 }}
                       onClick={() => handleSelectCase(c.id)}
-                      className="group relative flex flex-col items-start rounded-[2rem] border border-slate-100 bg-white p-8 text-left shadow-sm transition-all hover:border-blue-200 hover:shadow-xl hover:shadow-blue-50/50 cursor-pointer"
+                      className="group relative flex flex-col items-start rounded-[2rem] border border-[var(--border)] bg-[var(--surface)] p-8 text-left shadow-[var(--shadow-sm)] transition-all hover:border-[var(--accent-light)] hover:shadow-[var(--shadow-lg)] cursor-pointer"
                     >
                       <div className="mb-6 flex w-full items-center justify-between">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent-lighter)] text-[var(--accent)] group-hover:bg-[var(--accent)] group-hover:text-white transition-colors">
                           <User className="h-6 w-6" />
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-tighter ${
-                            c.processing_status === 'completed' ? 'bg-emerald-50 text-emerald-600' :
-                            c.processing_status === 'failed' ? 'bg-red-50 text-red-600' :
-                            'bg-blue-50 text-blue-600 animate-pulse'
+                            c.processing_status === 'completed' ? 'bg-[var(--success-light)] text-[var(--success)]' :
+                            c.processing_status === 'failed' ? 'bg-[var(--danger-light)] text-[var(--danger)]' :
+                            'bg-[var(--accent-lighter)] text-[var(--accent)] animate-pulse'
                           }`}>
                             {c.processing_status}
                           </span>
-                          <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-[10px] font-bold text-slate-600 group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors">
+                          <span className="inline-flex items-center rounded-full bg-[var(--bg-secondary)] px-3 py-1 text-[10px] font-bold text-[var(--text-secondary)] group-hover:bg-[var(--accent-lighter)] group-hover:text-[var(--accent)] transition-colors">
                             {c.event_count} EVENTS
                           </span>
                         </div>
@@ -698,22 +721,22 @@ export default function Dashboard() {
                       
                       <div className="mb-6 w-full">
                         <div className="flex items-center justify-between">
-                          <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors truncate">{c.patient_name}</h3>
+                          <h3 className="text-xl font-bold text-[var(--text-primary)] group-hover:text-[var(--accent)] transition-colors truncate">{c.patient_name}</h3>
                           <button 
                             onClick={(e) => handleDeleteCase(e, c.id)}
-                            className="p-2 text-slate-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+                            className="p-2 text-[var(--text-muted)] hover:text-[var(--danger)] transition-colors opacity-0 group-hover:opacity-100"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
-                        <p className="mt-1 text-sm font-medium text-slate-500 flex items-center">
+                        <p className="mt-1 text-sm font-medium text-[var(--text-secondary)] flex items-center">
                           <Hash className="mr-1 h-3 w-3" /> {c.case_reference}
                         </p>
                       </div>
 
-                      <div className="mt-auto w-full border-t border-slate-50 pt-6 flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                      <div className="mt-auto w-full border-t border-[var(--border-light)] pt-6 flex items-center justify-between text-[10px] font-bold text-[var(--text-muted)] uppercase tracking-widest">
                         <span>CREATED: {c.created_at ? new Date(c.created_at).toLocaleDateString() : '--'}</span>
-                        <ChevronRight className="h-4 w-4 text-slate-300 group-hover:translate-x-1 transition-transform" />
+                        <ChevronRight className="h-4 w-4 text-[var(--text-muted)] group-hover:translate-x-1 transition-transform" />
                       </div>
                     </motion.div>
                   ))}

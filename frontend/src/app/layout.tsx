@@ -10,6 +10,8 @@ export const metadata: Metadata = {
 };
 
 import { AuthProvider } from "@/context/AuthContext";
+import { ThemeProvider } from "@/context/ThemeContext";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function RootLayout({
   children,
@@ -18,10 +20,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${inter.variable} h-full`} suppressHydrationWarning>
-      <body className="font-sans antialiased bg-slate-50/50 min-h-full flex flex-col" suppressHydrationWarning>
-        <AuthProvider>
-          {children}
-        </AuthProvider>
+      <body className="font-sans antialiased min-h-full flex flex-col" suppressHydrationWarning>
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+            <ThemeToggle />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

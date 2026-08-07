@@ -24,9 +24,9 @@ const COLORS = [
 const CustomTooltip = ({ active, payload }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="rounded-xl border border-slate-100 bg-white/95 backdrop-blur-sm p-3 shadow-2xl ring-1 ring-black/5">
-        <p className="text-xs font-bold text-slate-900">{payload[0].name || payload[0].payload.month}</p>
-        <p className="text-sm font-semibold text-blue-600">
+      <div className="rounded-xl border border-[var(--chart-tooltip-border)] bg-[var(--chart-tooltip-bg)] backdrop-blur-sm p-3 shadow-2xl ring-1 ring-black/5">
+        <p className="text-xs font-bold text-[var(--text-primary)]">{payload[0].name || payload[0].payload.month}</p>
+        <p className="text-sm font-semibold text-[var(--accent)]">
           {payload[0].value} {payload[0].value === 1 ? 'Event' : 'Events'}
         </p>
       </div>
@@ -78,11 +78,11 @@ export default function EventCharts({ events }: { events: Event[] }) {
       className="grid grid-cols-1 lg:grid-cols-3 gap-6"
     >
       {/* Area chart - spans 2 cols */}
-      <div className="lg:col-span-2 rounded-3xl border border-slate-100 bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 shadow-lg">
+      <div className="lg:col-span-2 rounded-3xl border border-[var(--border)] bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 shadow-lg">
         <div className="flex items-center justify-between mb-6">
           <div>
             <h3 className="text-lg font-bold text-white">Treatment Analytics</h3>
-            <p className="text-xs text-slate-400 mt-1">Patient visit frequency over time</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">Patient visit frequency over time</p>
           </div>
           <span className="rounded-full bg-blue-500/20 px-3 py-1 text-[10px] font-bold text-blue-300 uppercase tracking-wider">
             {monthlyFreq.length} Months
@@ -96,7 +96,7 @@ export default function EventCharts({ events }: { events: Event[] }) {
                 <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.05} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#334155" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--chart-grid)" />
             <XAxis 
               dataKey="month" 
               axisLine={false} 
@@ -122,16 +122,16 @@ export default function EventCharts({ events }: { events: Event[] }) {
             />
           </AreaChart>
         </ResponsiveContainer>
-        <p className="text-[10px] text-slate-500 mt-4 italic">
+        <p className="text-[10px] text-[var(--text-secondary)] mt-4 italic">
           Insight: {monthlyFreq.length > 0 ? `Peak activity in ${monthlyFreq.reduce((a, b) => a.visits > b.visits ? a : b).month} with ${monthlyFreq.reduce((a, b) => a.visits > b.visits ? a : b).visits} visits.` : 'No data available.'}
         </p>
       </div>
 
       {/* Donut chart */}
-      <div className="rounded-3xl border border-slate-100 bg-white p-8 shadow-sm">
+      <div className="rounded-3xl border border-[var(--border)] bg-[var(--surface)] p-8 shadow-[var(--shadow-sm)]">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-slate-900">Distribution</h3>
-          <span className="rounded-full bg-blue-50 px-3 py-1 text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+          <h3 className="text-lg font-bold text-[var(--text-primary)]">Distribution</h3>
+          <span className="rounded-full bg-[var(--accent-lighter)] px-3 py-1 text-[10px] font-bold text-[var(--accent)] uppercase tracking-wider">
             {typeDist.length} Types
           </span>
         </div>
@@ -157,8 +157,8 @@ export default function EventCharts({ events }: { events: Event[] }) {
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none" style={{ top: 0, height: 220 }}>
-            <span className="text-3xl font-extrabold text-slate-900">{totalEvents}</span>
-            <span className="text-[10px] font-bold text-slate-400 uppercase">Total</span>
+            <span className="text-3xl font-extrabold text-[var(--text-primary)]">{totalEvents}</span>
+            <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">Total</span>
           </div>
         </div>
 
@@ -167,11 +167,11 @@ export default function EventCharts({ events }: { events: Event[] }) {
             <div key={i} className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[i % COLORS.length] }} />
-                <span className="text-[11px] font-semibold text-slate-600 truncate">{entry.name}</span>
+                <span className="text-[11px] font-semibold text-[var(--text-secondary)] truncate">{entry.name}</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-slate-900">{entry.value}</span>
-                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <span className="text-[11px] font-bold text-[var(--text-primary)]">{entry.value}</span>
+                <div className="w-16 h-1.5 bg-[var(--bg-secondary)] rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full"
                     style={{ width: `${(entry.value / totalEvents) * 100}%`, backgroundColor: COLORS[i % COLORS.length] }}

@@ -29,7 +29,7 @@ export default function ConfirmModal({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50"
+            className="fixed inset-0 bg-[var(--overlay)] backdrop-blur-sm z-50"
             onClick={onCancel}
           />
           <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none p-4">
@@ -37,29 +37,29 @@ export default function ConfirmModal({
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden pointer-events-auto border border-slate-100"
+              className="w-full max-w-md bg-[var(--surface-elevated)] rounded-3xl shadow-2xl overflow-hidden pointer-events-auto border border-[var(--border)]"
             >
               <div className="p-6 pb-0">
                 <div className="flex items-start justify-between">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-600 mb-4">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--danger-light)] text-[var(--danger)] mb-4">
                     <AlertCircle className="h-6 w-6" />
                   </div>
                   <button 
                     onClick={onCancel}
-                    className="p-2 -mr-2 text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-xl transition-colors"
+                    className="p-2 -mr-2 text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--surface-hover)] rounded-xl transition-colors"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
                 
-                <h3 className="text-xl font-bold text-slate-900 mb-2">{title}</h3>
-                <p className="text-sm font-medium text-slate-500 mb-8">{message}</p>
+                <h3 className="text-xl font-bold text-[var(--text-primary)] mb-2">{title}</h3>
+                <p className="text-sm font-medium text-[var(--text-secondary)] mb-8">{message}</p>
               </div>
 
-              <div className="p-4 bg-slate-50 border-t border-slate-100 flex items-center gap-3 justify-end">
+              <div className="p-4 bg-[var(--bg)] border-t border-[var(--border)] flex items-center gap-3 justify-end">
                 <button
                   onClick={onCancel}
-                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-slate-600 bg-white border border-slate-200 shadow-sm hover:bg-slate-50 transition-colors"
+                  className="px-5 py-2.5 rounded-xl text-sm font-bold text-[var(--text-secondary)] bg-[var(--surface)] border border-[var(--border)] shadow-[var(--shadow-sm)] hover:bg-[var(--surface-hover)] transition-colors"
                 >
                   {cancelText}
                 </button>

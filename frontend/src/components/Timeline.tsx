@@ -30,13 +30,13 @@ const getEventIcon = (type: string) => {
 const getEventAccent = (type: string) => {
   const t = type.toLowerCase();
   if (t.includes('imaging')) return { border: 'border-l-violet-500', badge: 'bg-violet-50 text-violet-700', dot: 'bg-violet-500' };
-  if (t.includes('surgery')) return { border: 'border-l-red-500', badge: 'bg-red-50 text-red-700', dot: 'bg-red-500' };
-  if (t.includes('prescription') || t.includes('medication')) return { border: 'border-l-emerald-500', badge: 'bg-emerald-50 text-emerald-700', dot: 'bg-emerald-500' };
+  if (t.includes('surgery')) return { border: 'border-l-red-500', badge: 'bg-[var(--danger-light)] text-[var(--danger)]', dot: 'bg-red-500' };
+  if (t.includes('prescription') || t.includes('medication')) return { border: 'border-l-emerald-500', badge: 'bg-[var(--success-light)] text-[var(--success)]', dot: 'bg-emerald-500' };
   if (t.includes('follow')) return { border: 'border-l-cyan-500', badge: 'bg-cyan-50 text-cyan-700', dot: 'bg-cyan-500' };
-  if (t.includes('visit') || t.includes('initial')) return { border: 'border-l-blue-500', badge: 'bg-blue-50 text-blue-700', dot: 'bg-blue-500' };
-  if (t.includes('therapy') || t.includes('chiro')) return { border: 'border-l-amber-500', badge: 'bg-amber-50 text-amber-700', dot: 'bg-amber-500' };
+  if (t.includes('visit') || t.includes('initial')) return { border: 'border-l-blue-500', badge: 'bg-[var(--accent-lighter)] text-blue-700', dot: 'bg-blue-500' };
+  if (t.includes('therapy') || t.includes('chiro')) return { border: 'border-l-amber-500', badge: 'bg-[var(--warning-light)] text-[var(--warning)]', dot: 'bg-amber-500' };
   if (t.includes('lab')) return { border: 'border-l-pink-500', badge: 'bg-pink-50 text-pink-700', dot: 'bg-pink-500' };
-  return { border: 'border-l-slate-400', badge: 'bg-slate-100 text-slate-700', dot: 'bg-slate-400' };
+  return { border: 'border-l-slate-400', badge: 'bg-[var(--bg-secondary)] text-slate-700', dot: 'bg-slate-400' };
 };
 
 export default function Timeline({ events }: TimelineProps) {
@@ -61,10 +61,10 @@ export default function Timeline({ events }: TimelineProps) {
   if (!events || events.length === 0) {
     return (
       <div className="p-12 text-center">
-        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-slate-50 text-slate-300 mb-4">
+        <div className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[var(--bg)] text-[var(--text-muted)] mb-4">
           <Clock className="h-8 w-8" />
         </div>
-        <p className="text-slate-500 font-medium italic">No events found for this case yet.</p>
+        <p className="text-[var(--text-secondary)] font-medium italic">No events found for this case yet.</p>
       </div>
     );
   }
@@ -99,7 +99,7 @@ export default function Timeline({ events }: TimelineProps) {
                   initial={{ opacity: 0, x: -10 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.02 }}
-                  className={`relative rounded-2xl border border-slate-100 bg-white p-5 shadow-sm hover:shadow-md transition-all border-l-4 ${accent.border}`}
+                  className={`relative rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-5 shadow-[var(--shadow-sm)] hover:shadow-md transition-all border-l-4 ${accent.border}`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                     <div className="flex-1 min-w-0">
@@ -108,23 +108,23 @@ export default function Timeline({ events }: TimelineProps) {
                           {getEventIcon(event.event_type)}
                           {event.event_type}
                         </span>
-                        <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">#{event.id}</span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-[var(--text-muted)]">#{event.id}</span>
                       </div>
                       <p className="text-sm text-slate-700 leading-relaxed font-medium">{event.description}</p>
                     </div>
 
                     <div className="flex items-center gap-3 flex-shrink-0">
-                      <div className="flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 border border-slate-100">
-                        <Clock className="w-3 h-3 text-slate-400" />
-                        <span className="text-[11px] font-bold text-slate-600">{formattedDate}</span>
+                      <div className="flex items-center gap-1.5 rounded-lg bg-[var(--bg)] px-3 py-1.5 border border-[var(--border)]">
+                        <Clock className="w-3 h-3 text-[var(--text-muted)]" />
+                        <span className="text-[11px] font-bold text-[var(--text-secondary)]">{formattedDate}</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="flex items-center gap-3 mt-3 pt-3 border-t border-slate-50 text-[10px]">
-                    <div className="flex items-center text-slate-400 font-bold uppercase tracking-wider">
+                    <div className="flex items-center text-[var(--text-muted)] font-bold uppercase tracking-wider">
                       <FileText className="w-3 h-3 mr-1" />
-                      <span className="text-slate-500">{event.source_file}</span>
+                      <span className="text-[var(--text-secondary)]">{event.source_file}</span>
                     </div>
                   </div>
                 </motion.div>
