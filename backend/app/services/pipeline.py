@@ -149,8 +149,8 @@ def _do_process(file_path: str, case_id: int, db):
     # ── 4. Process each chunk with LLM ───────────────────────────
     import concurrent.futures
 
-    logger.info(f"  Starting parallel processing of {len(chunks)} chunks with max_workers=4...")
-    with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+    logger.info(f"  Starting processing of {len(chunks)} chunks with max_workers=2...")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
         future_to_chunk = {executor.submit(extract_entities, chunk): idx for idx, chunk in enumerate(chunks)}
         
         for future in concurrent.futures.as_completed(future_to_chunk):
@@ -182,14 +182,12 @@ def _do_process(file_path: str, case_id: int, db):
         if patient.name == "Unknown" or not patient.name:
             patient.name = patient_info["name"]
         if patient_info.get("dob") and not patient.dob:
-            try:
-                patient.dob = datetime.strptime(patient_info["dob"], "%Y-%m-%d").date()
-            except (ValueError, TypeError):
-                pass
+            parsed_dob = _parse_date(patient_info["dob"])
+            if parsed_dob:
+                patient.dob = parsed_dob
         db.commit()
 
     logger.info(f"  ✓ Finished processing {os.path.basename(file_path)} for case {case_id}")
-
 
 
 def _save_entities_batch(result: dict, case_id: int, filename: str, seen_keys: set, db):
@@ -235,14 +233,46 @@ def _save_entities_batch(result: dict, case_id: int, filename: str, seen_keys: s
         count += 1
 
     if count:
-        db.commit()
+        try:
+            db.commit()
+        except Exception as e:
+            db.rollback()
+            logger.error(f"Error committing batch entities: {e}")
 
 def _parse_date(raw_date: str):
-    if not raw_date: return None
-    # Support multiple formats
+    if not raw_date or not isinstance(raw_date, str):
+        return None
+    raw_date = raw_date.strip()
+    
+    # 1. Match YYYY-MM-DD
+    match = re.search(r'\b(\d{4})[-/](\d{1,2})[-/](\d{1,2})\b', raw_date)
+    if match:
+        try:
+            return datetime(int(match.group(1)), int(match.group(2)), int(match.group(3))).date()
+        except ValueError:
+            pass
+            
+    # 2. Match MM/DD/YYYY or MM-DD-YYYY
+    match = re.search(r'\b(\d{1,2})[-/](\d{1,2})[-/](\d{4})\b', raw_date)
+    if match:
+        try:
+            return datetime(int(match.group(3)), int(match.group(1)), int(match.group(2))).date()
+        except ValueError:
+            pass
+
+    # 3. Match MM/DD/YY or MM-DD-YY
+    match = re.search(r'\b(\d{1,2})[-/](\d{1,2})[-/](\d{2})\b', raw_date)
+    if match:
+        try:
+            year = 2000 + int(match.group(3))
+            return datetime(year, int(match.group(1)), int(match.group(2))).date()
+        except ValueError:
+            pass
+
+    # 4. Fallback format parsing
     for fmt in ("%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y", "%B %d, %Y", "%b %d, %Y"):
         try:
             return datetime.strptime(raw_date, fmt).date()
-        except ValueError:
+        except (ValueError, TypeError):
             continue
     return None
