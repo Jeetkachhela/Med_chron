@@ -115,12 +115,14 @@ def create_case(case_in: CaseCreate, db: Session = Depends(get_db), current_user
         raise HTTPException(status_code=500, detail="Database error occurred while creating the case.")
 
 
+from typing import List, Union
+
 # ── Upload Files ─────────────────────────────────────────────────
 @router.post("/{case_id}/upload")
 async def upload_files(
     case_id: int, 
     background_tasks: BackgroundTasks,
-    files: List[UploadFile] = File(...), 
+    files: Union[List[UploadFile], UploadFile] = File(None), 
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -129,8 +131,13 @@ async def upload_files(
         raise HTTPException(status_code=404, detail="Case not found")
     _check_case_ownership(case, current_user)
 
+    if not files:
+        raise HTTPException(status_code=400, detail="No files provided for upload.")
+
+    file_list = files if isinstance(files, list) else [files]
+
     saved_files = []
-    for file in files:
+    for file in file_list:
         # Validate PDF extension or content type
         is_pdf = (file.filename and file.filename.lower().endswith('.pdf')) or (file.content_type in ["application/pdf", "application/x-pdf", "application/octet-stream"])
         if not is_pdf:
