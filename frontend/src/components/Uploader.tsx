@@ -66,16 +66,24 @@ export default function Uploader({ onUploadComplete }: UploaderProps) {
       const caseId = caseRes.data.case_id;
       setProgress(40);
 
-      const formData = new FormData();
-      files.forEach(file => formData.append('files', file));
-      
-      await axios.post(`${API_BASE}/cases/${caseId}/upload`, formData, {
-        headers: authHeaders,
-        onUploadProgress: (progressEvent) => {
-          const p = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 100));
-          setProgress(40 + (p * 0.6));
-        }
-      });
+      // Upload each file individually to avoid HTTP/2 proxy body limit resets on Render
+      const totalFiles = files.length;
+      for (let i = 0; i < totalFiles; i++) {
+        const file = files[i];
+        const singleFormData = new FormData();
+        singleFormData.append('files', file);
+        
+        await axios.post(`${API_BASE}/cases/${caseId}/upload`, singleFormData, {
+          headers: authHeaders,
+          timeout: 120000,
+          onUploadProgress: (progressEvent) => {
+            const currentFileProgress = (progressEvent.loaded / (progressEvent.total || 1)) * (55 / totalFiles);
+            const baseProgress = 40 + (i * (55 / totalFiles));
+            setProgress(Math.min(98, Math.round(baseProgress + currentFileProgress)));
+          }
+        });
+      }
+      setProgress(100);
 
       onUploadComplete(caseId);
     } catch (err: unknown) {
