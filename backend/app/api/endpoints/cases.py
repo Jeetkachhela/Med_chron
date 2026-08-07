@@ -129,33 +129,44 @@ async def upload_files(
 
     saved_files = []
     for file in files:
-        # Fix #11: Validate file type
-        if file.content_type not in settings.ALLOWED_FILE_TYPES:
+        # Validate PDF extension or content type
+        is_pdf = (file.filename and file.filename.lower().endswith('.pdf')) or (file.content_type in ["application/pdf", "application/x-pdf", "application/octet-stream"])
+        if not is_pdf:
             raise HTTPException(
                 status_code=400,
-                detail=f"File type '{file.content_type}' not allowed. Only PDF files are accepted."
+                detail=f"File '{file.filename}' is not a valid PDF file. Only PDF files are accepted."
             )
 
-        # Fix #11: Validate file size
-        contents = await file.read()
-        if len(contents) > settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024:
-            raise HTTPException(
-                status_code=400,
-                detail=f"File '{file.filename}' exceeds the {settings.MAX_UPLOAD_SIZE_MB}MB size limit."
-            )
-
-        # Fix #11: Sanitize filename to prevent path traversal
+        # Sanitize filename to prevent path traversal
         safe_name = _sanitize_filename(file.filename)
         file_location = os.path.join(UPLOAD_DIR, f"{case_id}_{uuid.uuid4().hex[:8]}_{safe_name}")
         
-        with open(file_location, "wb") as buffer:
-            buffer.write(contents)
+        # Stream chunks directly to disk to prevent RAM spikes and HTTP/2 stream timeouts
+        file_size = 0
+        max_bytes = settings.MAX_UPLOAD_SIZE_MB * 1024 * 1024
+        try:
+            with open(file_location, "wb") as buffer:
+                while chunk := await file.read(1024 * 1024):
+                    file_size += len(chunk)
+                    if file_size > max_bytes:
+                        raise HTTPException(
+                            status_code=400,
+                            detail=f"File '{file.filename}' exceeds the {settings.MAX_UPLOAD_SIZE_MB}MB size limit."
+                        )
+                    buffer.write(chunk)
+        except Exception as e:
+            if os.path.exists(file_location):
+                os.remove(file_location)
+            if isinstance(e, HTTPException):
+                raise e
+            logger.error(f"Error writing uploaded file {file.filename}: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to process file upload: {str(e)}")
         
         db_file = DBFile(
             case_id=case_id,
             file_name=file.filename,  # Keep original name for display
             file_path=file_location,
-            file_type=file.content_type,
+            file_type=file.content_type or "application/pdf",
         )
         db.add(db_file)
         saved_files.append(file_location)

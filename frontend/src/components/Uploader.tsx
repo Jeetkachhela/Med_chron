@@ -70,7 +70,7 @@ export default function Uploader({ onUploadComplete }: UploaderProps) {
       files.forEach(file => formData.append('files', file));
       
       await axios.post(`${API_BASE}/cases/${caseId}/upload`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data', ...authHeaders },
+        headers: authHeaders,
         onUploadProgress: (progressEvent) => {
           const p = Math.round((progressEvent.loaded * 100) / (progressEvent.total || 100));
           setProgress(40 + (p * 0.6));
