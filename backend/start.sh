@@ -22,5 +22,4 @@ echo "==> Starting uvicorn server on port ${PORT:-8000}..."
 exec uvicorn app.main:app \
   --host 0.0.0.0 \
   --port ${PORT:-8000} \
-  --timeout-keep-alive 300 \
-  --limit-max-request-size 0
+  --timeout-keep-alive 300
