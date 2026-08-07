@@ -48,6 +48,7 @@ def _check_case_ownership(case: Case, user: User):
 
 
 # ── List Cases (user-scoped) ─────────────────────────────────────
+@router.get("", response_model=list)
 @router.get("/", response_model=list)
 def list_cases(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     """Fix #3, #33: User-scoped cases with N+1 fix using subquery for event counts."""
@@ -81,6 +82,7 @@ def list_cases(db: Session = Depends(get_db), current_user: User = Depends(get_c
 
 
 # ── Create Case ──────────────────────────────────────────────────
+@router.post("", response_model=dict)
 @router.post("/", response_model=dict)
 def create_case(case_in: CaseCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     patient_name = getattr(case_in, 'patient_name', 'Unknown') or 'Unknown'
@@ -187,7 +189,8 @@ async def upload_files(
     return {"message": "Files uploaded and processing started", "status": "processing"}
 
 
-# ── Get Chronology ───────────────────────────────────────────────
+# ── Get Chronology & Case Details ───────────────────────────────
+@router.get("/{case_id}")
 @router.get("/{case_id}/chronology")
 def get_chronology(case_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     case = db.query(Case).filter(Case.id == case_id).first()

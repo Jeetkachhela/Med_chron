@@ -7,9 +7,16 @@ import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
 import { API_BASE } from '@/lib/api';
 
-export default function Login() {
+import { ArrowLeft } from 'lucide-react';
+
+interface LoginProps {
+  onBackToLanding?: () => void;
+  initialRegister?: boolean;
+}
+
+export default function Login({ onBackToLanding, initialRegister = false }: LoginProps) {
   const { login } = useAuth();
-  const [isRegister, setIsRegister] = useState(false);
+  const [isRegister, setIsRegister] = useState(initialRegister);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -78,9 +85,18 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-6">
-      {/* Fix #24: Removed external image URL — using CSS gradient pattern instead */}
-      <div className="absolute inset-0 opacity-[0.03]" style={{
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 flex items-center justify-center p-6 relative">
+      {onBackToLanding && (
+        <button 
+          onClick={onBackToLanding}
+          className="absolute top-6 left-6 flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-blue-600 bg-white/80 backdrop-blur-md px-4 py-2 rounded-xl border border-slate-200 shadow-sm transition-all"
+        >
+          <ArrowLeft className="h-4 w-4" /> Back to Home
+        </button>
+      )}
+
+      {/* Background Pattern */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{
         backgroundImage: 'radial-gradient(circle at 1px 1px, #94a3b8 1px, transparent 0)',
         backgroundSize: '24px 24px'
       }}></div>

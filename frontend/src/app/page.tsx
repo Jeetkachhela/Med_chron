@@ -11,6 +11,7 @@ import DashboardStats from '@/components/DashboardStats';
 import DiagnosticsTable from '@/components/DiagnosticsTable';
 import TreatmentsTable from '@/components/TreatmentsTable';
 import FlagsPanel from '@/components/FlagsPanel';
+import HeroLanding from '@/components/HeroLanding';
 import Login from '@/components/Login';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import ConfirmModal from '@/components/ConfirmModal';
@@ -116,6 +117,8 @@ interface ChronologyData {
 
 export default function Dashboard() {
   const { user, isLoading, logout } = useAuth();
+  const [currentView, setCurrentView] = useState<'landing' | 'auth' | 'workspace'>('landing');
+  const [authRegisterMode, setAuthRegisterMode] = useState(false);
   const [activeCaseId, setActiveCaseId] = useState<number | null>(null);
   const [caseData, setCaseData] = useState<ChronologyData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -306,7 +309,34 @@ export default function Dashboard() {
   }
 
   if (!user) {
-    return <Login />;
+    if (currentView === 'auth') {
+      return (
+        <Login 
+          onBackToLanding={() => setCurrentView('landing')} 
+          initialRegister={authRegisterMode} 
+        />
+      );
+    }
+
+    return (
+      <HeroLanding
+        onGetStarted={() => { setAuthRegisterMode(true); setCurrentView('auth'); }}
+        onSignIn={() => { setAuthRegisterMode(false); setCurrentView('auth'); }}
+        isAuthenticated={false}
+        onGoToWorkspace={() => setCurrentView('auth')}
+      />
+    );
+  }
+
+  if (currentView === 'landing') {
+    return (
+      <HeroLanding
+        onGetStarted={() => setCurrentView('workspace')}
+        onSignIn={() => setCurrentView('workspace')}
+        isAuthenticated={true}
+        onGoToWorkspace={() => setCurrentView('workspace')}
+      />
+    );
   }
 
   const tabs = [
@@ -350,7 +380,13 @@ export default function Dashboard() {
           </div>
           
           <div className="flex items-center gap-4">
-            <div className="h-8 w-[1px] bg-slate-200 mx-2" />
+            <button
+              onClick={() => setCurrentView('landing')}
+              className="text-xs font-bold text-slate-600 hover:text-blue-600 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50 transition-all"
+            >
+              Product Overview
+            </button>
+            <div className="h-8 w-[1px] bg-slate-200 mx-1" />
             <div className="flex items-center gap-3">
               <div className="text-right hidden sm:block">
                 <p className="text-xs font-semibold text-slate-900">{user?.full_name || user?.email}</p>
