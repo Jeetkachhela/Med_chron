@@ -18,13 +18,26 @@ interface UploaderProps {
   onUploadComplete: (caseId: string) => void;
 }
 
-// Retry helper with exponential backoff
+// Ping backend to wake up Render instance if sleeping
+async function ensureBackendAwake(): Promise<void> {
+  const rootUrl = API_BASE.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '');
+  for (let i = 0; i < 4; i++) {
+    try {
+      await axios.get(`${rootUrl}/`, { timeout: 45000 });
+      return;
+    } catch {
+      if (i < 3) await new Promise(r => setTimeout(r, 4000));
+    }
+  }
+}
+
+// Retry helper with exponential backoff for Render cold starts & proxy resets
 async function uploadWithRetry(
   url: string,
   formData: FormData,
   headers: Record<string, string>,
   onProgress: (loaded: number, total: number) => void,
-  maxRetries = 2
+  maxRetries = 4
 ): Promise<void> {
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
@@ -45,13 +58,14 @@ async function uploadWithRetry(
         err.code === 'ECONNRESET' ||
         err.code === 'ECONNABORTED' ||
         err.message?.includes('ERR_HTTP2_PROTOCOL_ERROR') ||
+        err.message?.includes('Network Error') ||
         (!err.response && err.message?.includes('timeout'))
       );
 
       if (isLastAttempt || !isRetryable) throw err;
       
-      // Wait before retry (exponential backoff: 2s, 4s)
-      await new Promise(r => setTimeout(r, 2000 * (attempt + 1)));
+      // Wait before retry (exponential backoff: 3s, 6s, 9s, 12s)
+      await new Promise(r => setTimeout(r, 3000 * (attempt + 1)));
     }
   }
 }
@@ -60,10 +74,10 @@ function getUploadErrorMessage(err: unknown): string {
   if (axios.isAxiosError(err)) {
     if (err.response?.data?.detail) return err.response.data.detail;
     if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
-      return 'Upload timed out. The file may be too large for the current connection. Please try again.';
+      return 'Upload timed out. The server or connection took too long. Please try again.';
     }
     if (err.code === 'ERR_NETWORK' || err.message?.includes('Network Error')) {
-      return 'Network error during upload. Please check your internet connection and try again.';
+      return 'Backend server is starting up or unreachable. Please wait 10 seconds and try again.';
     }
     if (err.message?.includes('ERR_HTTP2_PROTOCOL_ERROR')) {
       return 'Connection was reset during upload. Please try again — the server may have been busy.';
@@ -77,6 +91,7 @@ export default function Uploader({ onUploadComplete }: UploaderProps) {
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string>('');
   const [patientName, setPatientName] = useState('');
   const [caseRef, setCaseRef] = useState('');
 
@@ -104,9 +119,15 @@ export default function Uploader({ onUploadComplete }: UploaderProps) {
 
     setUploading(true);
     setError(null);
-    setProgress(10);
+    setProgress(5);
+    setStatusMessage('Connecting to server...');
 
     try {
+      // 1. Ensure backend is awake (handles Render cold start)
+      await ensureBackendAwake();
+      setProgress(15);
+      setStatusMessage('Creating case...');
+
       const authToken = sessionStorage.getItem('auth_token');
       const authHeaders = { Authorization: `Bearer ${authToken}` };
       
@@ -115,15 +136,16 @@ export default function Uploader({ onUploadComplete }: UploaderProps) {
         case_reference: caseRef || undefined,
         primary_complaint: "Medical Review",
         injury_cause: "Unknown"
-      }, { headers: authHeaders, timeout: 30000 });
+      }, { headers: authHeaders, timeout: 45000 });
       
       const caseId = caseRes.data.case_id;
-      setProgress(40);
+      setProgress(35);
 
-      // Upload each file individually with retry logic
+      // 2. Upload each file individually with retry logic
       const totalFiles = files.length;
       for (let i = 0; i < totalFiles; i++) {
         const file = files[i];
+        setStatusMessage(`Uploading file ${i + 1} of ${totalFiles} (${file.name})...`);
         const singleFormData = new FormData();
         singleFormData.append('files', file);
         
@@ -132,19 +154,21 @@ export default function Uploader({ onUploadComplete }: UploaderProps) {
           singleFormData,
           authHeaders,
           (loaded, total) => {
-            const currentFileProgress = (loaded / total) * (55 / totalFiles);
-            const baseProgress = 40 + (i * (55 / totalFiles));
+            const currentFileProgress = (loaded / total) * (60 / totalFiles);
+            const baseProgress = 35 + (i * (60 / totalFiles));
             setProgress(Math.min(98, Math.round(baseProgress + currentFileProgress)));
           }
         );
       }
       setProgress(100);
+      setStatusMessage('Upload complete!');
 
       onUploadComplete(caseId);
     } catch (err: unknown) {
       console.error(err);
       setError(getUploadErrorMessage(err));
       setUploading(false);
+      setStatusMessage('');
     }
   };
 
@@ -249,10 +273,12 @@ export default function Uploader({ onUploadComplete }: UploaderProps) {
         className="w-full flex items-center justify-center gap-3 rounded-2xl bg-[var(--accent)] py-4 text-lg font-bold text-white shadow-[var(--shadow-accent)] transition-all hover:bg-[var(--accent-hover)] active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100"
       >
         {uploading ? (
-          <>
-            <Loader2 className="h-6 w-6 animate-spin" />
-            <span>Uploading... {Math.round(progress)}%</span>
-          </>
+          <div className="flex flex-col items-center gap-1">
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-5 w-5 animate-spin" />
+              <span>{statusMessage || 'Processing...'} ({Math.round(progress)}%)</span>
+            </div>
+          </div>
         ) : (
           <>
             <CheckCircle2 className="h-6 w-6" />
