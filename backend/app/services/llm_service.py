@@ -92,31 +92,41 @@ def _get_ollama_client():
 def extract_entities(text_chunk: str) -> dict:
     prompt = EXTRACTION_PROMPT.format(text=text_chunk)
 
-    # ── Try Groq first (cloud, fast) with Retries ───────────────────
+    # ── Try Groq first (cloud, fast) with Retries and Model Fallbacks ──
     client = _get_groq_client()
     if client:
         import time
-        max_retries = 3
-        for attempt in range(max_retries):
-            try:
-                chat_completion = client.chat.completions.create(
-                    messages=[
-                        {"role": "system", "content": SYSTEM_PROMPT},
-                        {"role": "user", "content": prompt}
-                    ],
-                    model=settings.GROQ_MODEL,
-                    temperature=0.1,
-                    response_format={"type": "json_object"}
-                )
-                content = chat_completion.choices[0].message.content
-                parsed = json.loads(content)
-                event_count = len(parsed.get("events", []))
-                logger.info(f"  Groq extracted {event_count} events from chunk")
-                return parsed
-            except Exception as e:
-                logger.error(f"Groq extraction failed (attempt {attempt+1}/{max_retries}): {e}")
-                if attempt < max_retries - 1:
-                    time.sleep(2 ** attempt)  # Exponential backoff: 1s, 2s, 4s
+        # List of models to try in case configured model is decommissioned or rate-limited
+        models_to_try = []
+        for m in [settings.GROQ_MODEL, "llama-3.3-70b-versatile", "llama-3.1-8b-instant"]:
+            if m and m not in models_to_try:
+                models_to_try.append(m)
+
+        for target_model in models_to_try:
+            for attempt in range(2):
+                try:
+                    chat_completion = client.chat.completions.create(
+                        messages=[
+                            {"role": "system", "content": SYSTEM_PROMPT},
+                            {"role": "user", "content": prompt}
+                        ],
+                        model=target_model,
+                        temperature=0.1,
+                        response_format={"type": "json_object"}
+                    )
+                    content = chat_completion.choices[0].message.content
+                    parsed = json.loads(content)
+                    event_count = len(parsed.get("events", []))
+                    logger.info(f"  Groq ({target_model}) extracted {event_count} events from chunk")
+                    return parsed
+                except Exception as e:
+                    logger.error(f"Groq extraction failed on model '{target_model}' (attempt {attempt+1}/2): {e}")
+                    # If model is decommissioned or not found, break out to try next fallback model immediately
+                    err_str = str(e).lower()
+                    if "decommissioned" in err_str or "not_found" in err_str or "model_decommissioned" in err_str:
+                        break
+                    if attempt < 1:
+                        time.sleep(1)
 
     # ── Fallback to Ollama (local) ──────────────────────────────
     ollama = _get_ollama_client()
